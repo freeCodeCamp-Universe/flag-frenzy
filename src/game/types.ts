@@ -1,6 +1,7 @@
 export type GameStatus = 'idle' | 'playing' | 'paused' | 'complete';
 export type LevelStatus = 'locked' | 'unlocked' | 'unlocking';
 export type LevelMode = 'timed' | 'score';
+export type MatchFeedback = 'correct' | 'incorrect' | 'pending';
 
 export interface GameSession {
   lives: number;
@@ -46,6 +47,13 @@ export interface GameLevel {
 }
 
 export type PlayerMatches = Record<string, string>;
+
+export interface MatchAttempt {
+  correctCountryId: string;
+  feedback: MatchFeedback;
+  flagId: string;
+  selectedCountryId: string;
+}
 
 export interface MatchResult {
   correctCountryId: string;

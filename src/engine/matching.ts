@@ -1,5 +1,7 @@
 import type {
   GameLevel,
+  MatchAttempt,
+  MatchFeedback,
   MatchResult,
   MatchValidationResult,
   PlayerMatches,
@@ -79,6 +81,57 @@ export function validateMatches(
     results,
     totalCount,
   };
+}
+
+export function createMatchAttempt(
+  level: GameLevel,
+  flagId: string,
+  selectedCountryId: string,
+): MatchAttempt {
+  const correctCountryId = level.correctMatches[flagId];
+
+  if (correctCountryId === undefined) {
+    throw new Error(`Level "${level.id}" is missing a match for "${flagId}".`);
+  }
+
+  return {
+    correctCountryId,
+    feedback: selectedCountryId === correctCountryId ? 'correct' : 'incorrect',
+    flagId,
+    selectedCountryId,
+  };
+}
+
+export function applyMatchAttempt(
+  playerMatches: PlayerMatches,
+  attempt: MatchAttempt,
+): PlayerMatches {
+  return {
+    ...playerMatches,
+    [attempt.flagId]: attempt.selectedCountryId,
+  };
+}
+
+export function getMatchFeedback(
+  level: GameLevel,
+  playerMatches: PlayerMatches,
+  flagId: string,
+): MatchFeedback {
+  const selectedCountryId = playerMatches[flagId];
+
+  if (selectedCountryId === undefined) {
+    return 'pending';
+  }
+
+  return isCorrectMatch(level, flagId, selectedCountryId) ? 'correct' : 'incorrect';
+}
+
+export function getHintForFlag(level: GameLevel, flagId: string): string | undefined {
+  const correctCountryId = level.correctMatches[flagId];
+
+  return level.hints?.find(
+    (hint) => hint.flagId === flagId || hint.countryId === correctCountryId,
+  )?.text;
 }
 
 export function isCorrectMatch(

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { beginnerLevel } from '../levels/beginner';
-import { isCorrectMatch, validateLevel, validateMatches } from './matching';
+import {
+  applyMatchAttempt,
+  createMatchAttempt,
+  getHintForFlag,
+  getMatchFeedback,
+  isCorrectMatch,
+  validateLevel,
+  validateMatches,
+} from './matching';
 
 describe('matching engine', () => {
   it('validates a well-formed level', () => {
@@ -11,6 +19,66 @@ describe('matching engine', () => {
   it('checks individual flag-to-country matches', () => {
     expect(isCorrectMatch(beginnerLevel, 'flag-canada', 'country-canada')).toBe(true);
     expect(isCorrectMatch(beginnerLevel, 'flag-canada', 'country-japan')).toBe(false);
+  });
+
+  it('creates reusable match attempts', () => {
+    expect(
+      createMatchAttempt(beginnerLevel, 'flag-canada', 'country-canada'),
+    ).toMatchObject({
+      correctCountryId: 'country-canada',
+      feedback: 'correct',
+      flagId: 'flag-canada',
+      selectedCountryId: 'country-canada',
+    });
+
+    expect(
+      createMatchAttempt(beginnerLevel, 'flag-canada', 'country-japan'),
+    ).toMatchObject({
+      correctCountryId: 'country-canada',
+      feedback: 'incorrect',
+      flagId: 'flag-canada',
+      selectedCountryId: 'country-japan',
+    });
+  });
+
+  it('applies attempts without mutating previous player matches', () => {
+    const currentMatches = {
+      'flag-japan': 'country-japan',
+    };
+    const attempt = createMatchAttempt(beginnerLevel, 'flag-canada', 'country-canada');
+
+    expect(applyMatchAttempt(currentMatches, attempt)).toEqual({
+      'flag-canada': 'country-canada',
+      'flag-japan': 'country-japan',
+    });
+    expect(currentMatches).toEqual({
+      'flag-japan': 'country-japan',
+    });
+  });
+
+  it('derives feedback for pending, correct, and incorrect matches', () => {
+    expect(getMatchFeedback(beginnerLevel, {}, 'flag-canada')).toBe('pending');
+    expect(
+      getMatchFeedback(
+        beginnerLevel,
+        { 'flag-canada': 'country-canada' },
+        'flag-canada',
+      ),
+    ).toBe('correct');
+    expect(
+      getMatchFeedback(
+        beginnerLevel,
+        { 'flag-canada': 'country-japan' },
+        'flag-canada',
+      ),
+    ).toBe('incorrect');
+  });
+
+  it('finds optional hints by flag or correct country', () => {
+    expect(getHintForFlag(beginnerLevel, 'flag-japan')).toBe(
+      'This island nation uses a red circle on a white field.',
+    );
+    expect(getHintForFlag(beginnerLevel, 'flag-canada')).toBeUndefined();
   });
 
   it('scores a complete player submission', () => {
