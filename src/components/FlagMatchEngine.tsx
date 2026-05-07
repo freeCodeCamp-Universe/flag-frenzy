@@ -7,6 +7,7 @@ import {
   createMatchAttempt,
   getHintForFlag,
   getMatchFeedback,
+  isMatchLocked,
   validateMatches,
 } from '../engine/matching';
 import type { GameLevel, MatchAttempt, PlayerMatches } from '../game/types';
@@ -53,6 +54,10 @@ export function FlagMatchEngine({
   }
 
   function submitMatch(flagId: string, countryId: string) {
+    if (isMatchLocked(level, playerMatches, flagId)) {
+      return;
+    }
+
     const attempt = createMatchAttempt(level, flagId, countryId);
 
     setPlayerMatches((currentMatches) => applyMatchAttempt(currentMatches, attempt));
@@ -63,6 +68,11 @@ export function FlagMatchEngine({
         attemptId: (currentAttempts[flagId]?.attemptId ?? 0) + 1,
       },
     }));
+
+    if (attempt.feedback === 'incorrect') {
+      setRevealedHintFlagIds((currentIds) => new Set(currentIds).add(flagId));
+    }
+
     setSelectedCountryId(undefined);
   }
 
@@ -126,15 +136,21 @@ export function FlagMatchEngine({
             {level.flags.map((flag) => {
               const hint = getHintForFlag(level, flag.id);
               const isHintRevealed = revealedHintFlagIds.has(flag.id);
+              const attempt = attempts[flag.id];
+              const locked = isMatchLocked(level, playerMatches, flag.id);
+              const feedback = locked
+                ? getMatchFeedback(level, playerMatches, flag.id)
+                : (attempt?.feedback ?? 'pending');
 
               return (
                 <FlagCard
                   key={flag.id}
-                  attempt={attempts[flag.id]}
-                  feedback={getMatchFeedback(level, playerMatches, flag.id)}
+                  attempt={attempt}
+                  feedback={feedback}
                   flag={flag}
                   hint={hint}
                   isHintRevealed={isHintRevealed}
+                  isLocked={locked}
                   onClick={() => {
                     handleFlagClick(flag.id);
                   }}

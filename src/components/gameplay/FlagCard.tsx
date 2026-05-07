@@ -10,6 +10,7 @@ interface FlagCardProps {
   flag: FlagAsset;
   hint?: string;
   isHintRevealed: boolean;
+  isLocked: boolean;
   onClick: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   onRevealHint: () => void;
@@ -22,6 +23,7 @@ export function FlagCard({
   flag,
   hint,
   isHintRevealed,
+  isLocked,
   onClick,
   onDrop,
   onRevealHint,
@@ -50,12 +52,19 @@ export function FlagCard({
     >
       <button
         aria-label={`Match ${flag.alt}`}
-        className="block w-full rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel"
+        className="block w-full rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel disabled:cursor-not-allowed"
+        disabled={isLocked}
         onClick={onClick}
         onDragOver={(event) => {
-          event.preventDefault();
+          if (!isLocked) {
+            event.preventDefault();
+          }
         }}
-        onDrop={onDrop}
+        onDrop={(event) => {
+          if (!isLocked) {
+            onDrop(event);
+          }
+        }}
         type="button"
       >
         <img
@@ -67,9 +76,11 @@ export function FlagCard({
 
       <div className="mt-3 flex min-h-8 items-center justify-between gap-3 font-mono">
         <span className="text-base text-fcc-muted">
-          {selectedCountryName === undefined
-            ? feedback
-            : `ready: ${selectedCountryName}`}
+          {isLocked
+            ? 'locked'
+            : selectedCountryName === undefined
+              ? feedback
+              : `ready: ${selectedCountryName}`}
         </span>
         <AnimatePresence>
           {isCorrect ? (
@@ -107,6 +118,11 @@ export function FlagCard({
               </motion.p>
             ) : null}
           </AnimatePresence>
+          {isIncorrect ? (
+            <p className="mt-2 font-mono text-base text-fcc-danger">
+              Not quite. Use the hint and try another country.
+            </p>
+          ) : null}
         </div>
       )}
     </motion.article>

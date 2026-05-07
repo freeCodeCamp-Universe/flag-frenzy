@@ -7,6 +7,7 @@ import {
   getHintForFlag,
   getMatchFeedback,
   isCorrectMatch,
+  isMatchLocked,
   validateLevel,
   validateMatches,
 } from './matching';
@@ -54,6 +55,24 @@ describe('matching engine', () => {
     expect(currentMatches).toEqual({
       'flag-japan': 'country-japan',
     });
+  });
+
+  it('does not lock incorrect attempts into player matches', () => {
+    const currentMatches = {
+      'flag-japan': 'country-japan',
+    };
+    const attempt = createMatchAttempt(beginnerLevel, 'flag-canada', 'country-japan');
+
+    expect(applyMatchAttempt(currentMatches, attempt)).toEqual({
+      'flag-japan': 'country-japan',
+    });
+    expect(isMatchLocked(beginnerLevel, currentMatches, 'flag-canada')).toBe(false);
+  });
+
+  it('identifies locked correct matches', () => {
+    expect(
+      isMatchLocked(beginnerLevel, { 'flag-canada': 'country-canada' }, 'flag-canada'),
+    ).toBe(true);
   });
 
   it('derives feedback for pending, correct, and incorrect matches', () => {

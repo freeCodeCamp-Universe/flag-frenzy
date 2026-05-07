@@ -124,10 +124,22 @@ export function applyMatchAttempt(
   playerMatches: PlayerMatches,
   attempt: MatchAttempt,
 ): PlayerMatches {
+  if (attempt.feedback === 'incorrect') {
+    return { ...playerMatches };
+  }
+
   return {
     ...playerMatches,
     [attempt.flagId]: attempt.selectedCountryId,
   };
+}
+
+export function isMatchLocked(
+  level: GameLevel,
+  playerMatches: PlayerMatches,
+  flagId: string,
+): boolean {
+  return getMatchFeedback(level, playerMatches, flagId) === 'correct';
 }
 
 export function getMatchFeedback(

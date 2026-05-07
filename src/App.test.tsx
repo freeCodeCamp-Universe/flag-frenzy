@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
@@ -37,6 +37,48 @@ describe('App', () => {
     expect(screen.getByLabelText('correct')).toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+  });
+
+  it('keeps incorrect matches retryable and reveals a hint', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Japan' }));
+    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
+
+    expect(screen.getByText('incorrect')).toBeInTheDocument();
+    expect(
+      screen.getByText('Hint: The maple leaf is the giveaway.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Not quite. Use the hint and try another country.'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Canada' }));
+    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
+
+    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+  });
+
+  it('matches flags to countries by drag and drop', () => {
+    render(<App />);
+
+    const dataTransfer = createDataTransfer();
+
+    fireEvent.dragStart(screen.getByRole('button', { name: 'Canada' }), {
+      dataTransfer,
+    });
+    fireEvent.drop(screen.getByRole('button', { name: 'Match Flag of Canada' }), {
+      dataTransfer,
+    });
+
+    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
   });
 
   it('reveals optional hints on demand', async () => {
@@ -82,3 +124,28 @@ describe('App', () => {
     ).toBeInTheDocument();
   });
 });
+
+function createDataTransfer(): DataTransfer {
+  const store = new Map<string, string>();
+
+  return {
+    clearData: (format?: string) => {
+      if (format === undefined) {
+        store.clear();
+        return;
+      }
+
+      store.delete(format);
+    },
+    dropEffect: 'move',
+    effectAllowed: 'all',
+    files: [] as unknown as FileList,
+    getData: (format: string) => store.get(format) ?? '',
+    items: [] as unknown as DataTransferItemList,
+    setData: (format: string, data: string) => {
+      store.set(format, data);
+    },
+    setDragImage: () => undefined,
+    types: [],
+  };
+}
