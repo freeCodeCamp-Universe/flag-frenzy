@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDefaultProgress } from '../engine/progression';
-import { clearProgress, loadProgress, saveProgress } from './progressStorage';
+import {
+  clearProgress,
+  loadProgress,
+  progressStorageKey,
+  saveProgress,
+} from './progressStorage';
 
 describe('progress storage', () => {
   it('loads default progress when storage is empty', () => {
@@ -27,7 +32,7 @@ describe('progress storage', () => {
   it('falls back to default progress for malformed JSON', () => {
     const storage = createMemoryStorage();
 
-    storage.setItem('flag-frenzy:progress:v1', '{bad');
+    storage.setItem(progressStorageKey, '{bad');
 
     expect(loadProgress(storage)).toEqual(createDefaultProgress());
   });

@@ -1,6 +1,13 @@
 import type { GameLevel, GameProgress } from '../game/types';
 
-export const maxCampaignLevel = 30;
+export const MAX_CAMPAIGN_LEVEL = 30;
+
+interface RecordLevelCompletionOptions {
+  level: GameLevel;
+  levelNumber: number;
+  progress: GameProgress;
+  score: number;
+}
 
 export function createDefaultProgress(): GameProgress {
   return {
@@ -16,12 +23,7 @@ export function recordLevelCompletion({
   levelNumber,
   progress,
   score,
-}: {
-  level: GameLevel;
-  levelNumber: number;
-  progress: GameProgress;
-  score: number;
-}): GameProgress {
+}: RecordLevelCompletionOptions): GameProgress {
   const completedLevelIds = new Set(progress.completedLevelIds);
   completedLevelIds.add(level.id);
 
@@ -30,10 +32,10 @@ export function recordLevelCompletion({
     completedLevelIds: [...completedLevelIds],
     highScores: {
       ...progress.highScores,
-      [level.id]: Math.max(progress.highScores[level.id] ?? 0, score),
+      [level.id]: Math.max(progress.highScores[level.id] ?? 0, normalizeScore(score)),
     },
     highestUnlockedLevel: Math.min(
-      maxCampaignLevel,
+      MAX_CAMPAIGN_LEVEL,
       Math.max(progress.highestUnlockedLevel, levelNumber + 1),
     ),
   };
@@ -58,7 +60,15 @@ export function sanitizeProgress(value: unknown): GameProgress {
 }
 
 function clampLevel(level: number): number {
-  return Math.min(maxCampaignLevel, Math.max(1, Math.trunc(level)));
+  return Math.min(MAX_CAMPAIGN_LEVEL, Math.max(1, Math.trunc(level)));
+}
+
+function normalizeScore(score: number): number {
+  if (!Number.isFinite(score)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(score));
 }
 
 function isProgressShape(value: unknown): value is GameProgress {
@@ -66,14 +76,16 @@ function isProgressShape(value: unknown): value is GameProgress {
     return false;
   }
 
-  const progress = value as Partial<GameProgress>;
+  const progress = value as Record<string, unknown>;
+  const highScores = progress.highScores;
 
   return (
     progress.version === 1 &&
     Array.isArray(progress.completedLevelIds) &&
     progress.completedLevelIds.every((levelId) => typeof levelId === 'string') &&
-    typeof progress.highScores === 'object' &&
-    Object.values(progress.highScores).every((score) => typeof score === 'number') &&
+    typeof highScores === 'object' &&
+    highScores !== null &&
+    Object.values(highScores).every((score) => typeof score === 'number') &&
     typeof progress.highestUnlockedLevel === 'number'
   );
 }

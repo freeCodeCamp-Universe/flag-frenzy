@@ -65,6 +65,41 @@ describe('progression engine', () => {
     ).toBe(625);
   });
 
+  it('normalizes invalid scores and caps the final unlock', () => {
+    const level = campaignLevels[29];
+
+    if (level === undefined) {
+      throw new Error('Expected level 30.');
+    }
+
+    expect(
+      recordLevelCompletion({
+        level,
+        levelNumber: 30,
+        progress: createDefaultProgress(),
+        score: Number.NaN,
+      }),
+    ).toEqual({
+      completedLevelIds: ['level-30'],
+      highScores: {
+        'level-30': 0,
+      },
+      highestUnlockedLevel: 30,
+      version: 1,
+    });
+  });
+
+  it('falls back when high scores are null', () => {
+    expect(
+      sanitizeProgress({
+        completedLevelIds: [],
+        highScores: null,
+        highestUnlockedLevel: 2,
+        version: 1,
+      }),
+    ).toEqual(createDefaultProgress());
+  });
+
   it('sanitizes invalid persisted data', () => {
     expect(sanitizeProgress({ nope: true })).toEqual(createDefaultProgress());
     expect(

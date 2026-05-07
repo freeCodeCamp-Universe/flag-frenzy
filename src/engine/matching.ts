@@ -9,8 +9,10 @@ import type {
 
 export function validateLevel(level: GameLevel): string[] {
   const errors: string[] = [];
-  const flagIds = new Set(level.flags.map((flag) => flag.id));
-  const countryIds = new Set(level.countries.map((country) => country.id));
+  const flagIdList = level.flags.map((flag) => flag.id);
+  const countryIdList = level.countries.map((country) => country.id);
+  const flagIds = new Set(flagIdList);
+  const countryIds = new Set(countryIdList);
   const expectedFlagIds = Object.keys(level.correctMatches);
 
   if (level.flags.length === 0) {
@@ -23,6 +25,18 @@ export function validateLevel(level: GameLevel): string[] {
 
   if (level.optionCount < level.flags.length) {
     errors.push('Option count cannot be lower than the number of flags.');
+  }
+
+  if (level.optionCount !== level.countries.length) {
+    errors.push('Option count must match the number of countries.');
+  }
+
+  for (const duplicateFlagId of getDuplicateIds(flagIdList)) {
+    errors.push(`Duplicate flag id "${duplicateFlagId}".`);
+  }
+
+  for (const duplicateCountryId of getDuplicateIds(countryIdList)) {
+    errors.push(`Duplicate country id "${duplicateCountryId}".`);
   }
 
   for (const flagId of expectedFlagIds) {
@@ -170,4 +184,8 @@ export function isCorrectMatch(
   countryId: string,
 ): boolean {
   return level.correctMatches[flagId] === countryId;
+}
+
+function getDuplicateIds(ids: string[]): string[] {
+  return ids.filter((id, index) => ids.indexOf(id) !== index);
 }

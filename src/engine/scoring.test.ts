@@ -128,4 +128,25 @@ describe('scoring engine', () => {
       }),
     ).toBe(1);
   });
+
+  it('normalizes invalid scoring inputs', () => {
+    const level = campaignLevels[0];
+
+    if (level === undefined) {
+      throw new Error('Expected level 1.');
+    }
+
+    const validation = validateMatches(level, level.correctMatches);
+    const score = calculateLevelScore({
+      elapsedSeconds: Number.NaN,
+      hintsUsed: -1,
+      incorrectAttempts: -10,
+      level,
+      validation,
+    });
+
+    expect(score.hintBonus).toBe(100);
+    expect(score.incorrectPenalty).toBe(0);
+    expect(score.speedBonus).toBe(225);
+  });
 });

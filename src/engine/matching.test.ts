@@ -145,4 +145,65 @@ describe('matching engine', () => {
       'Correct match for "flag-missing" references an unknown country.',
     );
   });
+
+  it('reports duplicate ids and mismatched option counts', () => {
+    const firstCountry = beginnerLevel.countries[0];
+    const firstFlag = beginnerLevel.flags[0];
+
+    if (firstCountry === undefined || firstFlag === undefined) {
+      throw new Error('Expected beginner level fixtures.');
+    }
+
+    const invalidLevel = {
+      ...beginnerLevel,
+      countries: [
+        ...beginnerLevel.countries,
+        {
+          ...firstCountry,
+        },
+      ],
+      flags: [
+        ...beginnerLevel.flags,
+        {
+          ...firstFlag,
+        },
+      ],
+    };
+
+    expect(validateLevel(invalidLevel)).toEqual(
+      expect.arrayContaining([
+        'Duplicate country id "country-canada".',
+        'Duplicate flag id "flag-canada".',
+        'Option count must match the number of countries.',
+      ]),
+    );
+  });
+
+  it('reports malformed hints', () => {
+    const invalidLevel = {
+      ...beginnerLevel,
+      hints: [
+        {
+          text: '',
+        },
+        {
+          countryId: 'country-missing',
+          text: 'Unknown country.',
+        },
+        {
+          flagId: 'flag-missing',
+          text: 'Unknown flag.',
+        },
+      ],
+    };
+
+    expect(validateLevel(invalidLevel)).toEqual(
+      expect.arrayContaining([
+        'Hint text cannot be empty.',
+        'Hint must reference a country or flag.',
+        'Hint references unknown country "country-missing".',
+        'Hint references unknown flag "flag-missing".',
+      ]),
+    );
+  });
 });

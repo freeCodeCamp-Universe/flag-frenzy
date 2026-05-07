@@ -1,7 +1,7 @@
 import type { GameProgress } from '../game/types';
 import { createDefaultProgress, sanitizeProgress } from '../engine/progression';
 
-const progressStorageKey = 'flag-frenzy:progress:v1';
+export const progressStorageKey = 'flag-frenzy:progress:v1';
 
 export function loadProgress(storage: Storage = window.localStorage): GameProgress {
   const rawProgress = storage.getItem(progressStorageKey);

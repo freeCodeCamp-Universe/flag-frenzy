@@ -30,14 +30,14 @@ export function calculateLevelScore({
 }: ScoreInput): LevelScoreBreakdown {
   const baseScore = validation.correctCount * pointsPerCorrectMatch;
   const speedBonus = validation.isPerfect
-    ? calculateSpeedBonus(level, elapsedSeconds)
+    ? calculateSpeedBonus(level, normalizeCount(elapsedSeconds))
     : 0;
   const hintBonus =
-    validation.isPerfect && hintsUsed === 0
+    validation.isPerfect && normalizeCount(hintsUsed) === 0
       ? validation.totalCount * noHintBonusPerFlag
       : 0;
   const penalty = Math.min(
-    incorrectAttempts * incorrectPenalty,
+    normalizeCount(incorrectAttempts) * incorrectPenalty,
     baseScore + speedBonus + hintBonus,
   );
   const totalScore = Math.max(0, baseScore + speedBonus + hintBonus - penalty);
@@ -52,16 +52,26 @@ export function calculateLevelScore({
 }
 
 export function calculateSpeedBonus(level: GameLevel, elapsedSeconds: number): number {
+  const normalizedElapsedSeconds = normalizeCount(elapsedSeconds);
   const budgetSeconds =
-    level.timeLimitSeconds ?? Math.max(level.flags.length * 10, elapsedSeconds);
-  const remainingSeconds = Math.max(0, budgetSeconds - elapsedSeconds);
+    level.timeLimitSeconds ??
+    Math.max(level.flags.length * 10, normalizedElapsedSeconds);
+  const remainingSeconds = Math.max(0, budgetSeconds - normalizedElapsedSeconds);
 
   return remainingSeconds * speedBonusPerSecond;
 }
 
 export function getIncorrectAttemptCount(
-  attempts: Record<string, { feedback: string }>,
+  attempts: Record<string, { feedback: 'correct' | 'incorrect' | 'pending' }>,
 ): number {
   return Object.values(attempts).filter((attempt) => attempt.feedback === 'incorrect')
     .length;
+}
+
+function normalizeCount(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(value));
 }
