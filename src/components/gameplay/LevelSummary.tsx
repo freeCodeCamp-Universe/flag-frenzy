@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 
 import type { LevelScoreBreakdown } from '../../engine/scoring';
+import { popVariants } from '../../utils/animation';
 
 interface LevelSummaryProps {
   elapsedSeconds: number;
@@ -21,12 +22,12 @@ export function LevelSummary({
 }: LevelSummaryProps) {
   return (
     <motion.section
-      animate={{ opacity: 1, y: 0 }}
+      animate="visible"
       aria-labelledby="level-summary-title"
       className="mt-5 rounded border border-fcc-success bg-fcc-background p-4"
-      exit={{ opacity: 0, y: -8 }}
-      initial={{ opacity: 0, y: 12 }}
-      transition={{ duration: 0.24, ease: 'easeOut' }}
+      exit="hidden"
+      initial="hidden"
+      variants={popVariants}
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>

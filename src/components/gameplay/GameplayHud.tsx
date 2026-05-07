@@ -1,4 +1,7 @@
+import { motion } from 'framer-motion';
+
 import type { GameLevel, MatchValidationResult } from '../../game/types';
+import { statPulseVariants } from '../../utils/animation';
 
 interface GameplayHudProps {
   currentLevel: number;
@@ -33,12 +36,14 @@ export function GameplayHud({
 
         <dl className="grid grid-cols-3 gap-2 font-mono text-base">
           <Stat
+            pulseKey={validation.correctCount}
             label="Correct"
             value={`${String(validation.correctCount)}/${String(validation.totalCount)}`}
           />
-          <Stat label="Score" value={String(score)} />
+          <Stat label="Score" pulseKey={score} value={String(score)} />
           <Stat
             label={mode === 'timed' ? 'Timer' : 'Goal'}
+            pulseKey={timeLimitSeconds ?? validation.totalCount}
             value={
               mode === 'timed'
                 ? `${String(timeLimitSeconds ?? 0)}s`
@@ -59,12 +64,18 @@ export function GameplayHud({
 
 interface StatProps {
   label: string;
+  pulseKey: number;
   value: string;
 }
 
-function Stat({ label, value }: StatProps) {
+function Stat({ label, pulseKey, value }: StatProps) {
   return (
-    <div className="min-w-24 rounded border border-fcc-border bg-fcc-background px-3 py-2">
+    <motion.div
+      animate="changed"
+      className="min-w-24 rounded border border-fcc-border bg-fcc-background px-3 py-2 will-change-transform"
+      key={`${label}-${String(pulseKey)}`}
+      variants={statPulseVariants}
+    >
       <dt className="text-fcc-muted">{label}</dt>
       <dd
         aria-label={`${label}: ${value}`}
@@ -72,6 +83,6 @@ function Stat({ label, value }: StatProps) {
       >
         {value}
       </dd>
-    </div>
+    </motion.div>
   );
 }

@@ -13,6 +13,7 @@ import {
 import { calculateLevelScore } from '../engine/scoring';
 import type { GameLevel, MatchAttempt, PlayerMatches } from '../game/types';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
+import { levelAdvanceVariants } from '../utils/animation';
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
@@ -172,12 +173,12 @@ export function FlagMatchEngine({
 
       <AnimatePresence mode="wait">
         <motion.div
-          animate={{ opacity: 1, x: 0 }}
+          animate="center"
           className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]"
-          exit={{ opacity: 0, x: -24 }}
-          initial={{ opacity: 0, x: 24 }}
+          exit="exit"
+          initial="enter"
           key={level.id}
-          transition={{ duration: 0.24, ease: 'easeOut' }}
+          variants={levelAdvanceVariants}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {level.flags.map((flag) => {

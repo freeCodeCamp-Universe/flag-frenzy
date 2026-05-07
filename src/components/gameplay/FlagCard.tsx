@@ -2,6 +2,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import type { DragEvent } from 'react';
 
 import type { MatchFeedback, FlagAsset } from '../../game/types';
+import {
+  checkmarkVariants,
+  feedbackTransition,
+  feedbackVariants,
+  hintVariants,
+} from '../../utils/animation';
 import type { AttemptState } from '../FlagMatchEngine';
 
 interface FlagCardProps {
@@ -34,13 +40,7 @@ export function FlagCard({
 
   return (
     <motion.article
-      animate={
-        isIncorrect
-          ? { x: [0, -8, 8, -4, 4, 0] }
-          : isCorrect
-            ? { boxShadow: '0 0 0 2px rgb(var(--color-success) / 0.5)' }
-            : { boxShadow: '0 0 0 0 rgb(var(--color-success) / 0)' }
-      }
+      animate={feedback}
       className={[
         'rounded border bg-fcc-panel p-3 transition',
         isCorrect ? 'border-fcc-success' : '',
@@ -48,7 +48,8 @@ export function FlagCard({
         feedback === 'pending' ? 'border-fcc-border' : '',
       ].join(' ')}
       key={`${flag.id}-${String(attempt?.attemptId ?? 0)}`}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      transition={feedbackTransition}
+      variants={feedbackVariants}
     >
       <button
         aria-label={`Match ${flag.alt}`}
@@ -85,11 +86,12 @@ export function FlagCard({
         <AnimatePresence>
           {isCorrect ? (
             <motion.span
-              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              animate="visible"
               aria-label="correct"
               className="grid size-8 place-items-center rounded bg-fcc-success font-bold text-fcc-background"
-              exit={{ opacity: 0, scale: 0.4 }}
-              initial={{ opacity: 0, rotate: -20, scale: 0.3 }}
+              exit="hidden"
+              initial="hidden"
+              variants={checkmarkVariants}
             >
               ✓
             </motion.span>
@@ -109,19 +111,25 @@ export function FlagCard({
           <AnimatePresence>
             {isHintRevealed ? (
               <motion.p
-                animate={{ opacity: 1, y: 0 }}
+                animate="visible"
                 className="mt-3 text-base text-fcc-muted"
-                exit={{ opacity: 0, y: -4 }}
-                initial={{ opacity: 0, y: -4 }}
+                exit="hidden"
+                initial="hidden"
+                variants={hintVariants}
               >
                 Hint: {hint}
               </motion.p>
             ) : null}
           </AnimatePresence>
           {isIncorrect ? (
-            <p className="mt-2 font-mono text-base text-fcc-danger">
+            <motion.p
+              animate="visible"
+              className="mt-2 font-mono text-base text-fcc-danger"
+              initial="hidden"
+              variants={hintVariants}
+            >
               Not quite. Use the hint and try another country.
-            </p>
+            </motion.p>
           ) : null}
         </div>
       )}
