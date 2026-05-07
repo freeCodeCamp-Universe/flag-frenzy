@@ -78,7 +78,9 @@ describe('matching engine', () => {
     expect(getHintForFlag(beginnerLevel, 'flag-japan')).toBe(
       'This island nation uses a red circle on a white field.',
     );
-    expect(getHintForFlag(beginnerLevel, 'flag-canada')).toBeUndefined();
+    expect(getHintForFlag(beginnerLevel, 'flag-canada')).toBe(
+      'The maple leaf is the giveaway.',
+    );
   });
 
   it('scores a complete player submission', () => {

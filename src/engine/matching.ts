@@ -43,6 +43,24 @@ export function validateLevel(level: GameLevel): string[] {
     }
   }
 
+  for (const hint of level.hints ?? []) {
+    if (hint.text.trim().length === 0) {
+      errors.push('Hint text cannot be empty.');
+    }
+
+    if (hint.countryId === undefined && hint.flagId === undefined) {
+      errors.push('Hint must reference a country or flag.');
+    }
+
+    if (hint.countryId !== undefined && !countryIds.has(hint.countryId)) {
+      errors.push(`Hint references unknown country "${hint.countryId}".`);
+    }
+
+    if (hint.flagId !== undefined && !flagIds.has(hint.flagId)) {
+      errors.push(`Hint references unknown flag "${hint.flagId}".`);
+    }
+  }
+
   return errors;
 }
 
