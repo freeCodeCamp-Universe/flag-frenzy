@@ -16,6 +16,7 @@ export default {
           success: 'rgb(var(--color-success) / <alpha-value>)',
           danger: 'rgb(var(--color-danger) / <alpha-value>)',
           cta: 'rgb(var(--color-cta) / <alpha-value>)',
+          focus: 'rgb(var(--color-focus) / <alpha-value>)',
         },
       },
       fontFamily: {

@@ -15,6 +15,12 @@
   --color-success: 172 209 87;
   --color-danger: 255 173 173;
   --color-cta: 241 190 50;
+  --color-focus: 25 142 238;
+  --color-flag-red: 255 173 173;
+  --color-flag-white: 245 246 247;
+  --color-flag-blue: 153 201 255;
+  --color-flag-yellow: 241 190 50;
+  --color-flag-green: 172 209 87;
 }
 
 * {
@@ -39,6 +45,37 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+.flag-rush {
+  background: repeating-linear-gradient(
+    90deg,
+    rgb(var(--color-flag-red)) 0 14%,
+    rgb(var(--color-flag-white)) 14% 28%,
+    rgb(var(--color-flag-blue)) 28% 42%,
+    rgb(var(--color-flag-yellow)) 42% 56%,
+    rgb(var(--color-flag-green)) 56% 70%
+  );
+}
+
+.bg-flag-red {
+  background-color: rgb(var(--color-flag-red));
+}
+
+.bg-flag-white {
+  background-color: rgb(var(--color-flag-white));
+}
+
+.bg-flag-blue {
+  background-color: rgb(var(--color-flag-blue));
+}
+
+.bg-flag-yellow {
+  background-color: rgb(var(--color-flag-yellow));
+}
+
+.bg-flag-green {
+  background-color: rgb(var(--color-flag-green));
 }
 
 @media (max-width: 499px) {
