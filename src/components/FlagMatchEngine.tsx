@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DragEvent } from 'react';
 
 import {
@@ -10,10 +10,13 @@ import {
   isMatchLocked,
   validateMatches,
 } from '../engine/matching';
+import { calculateLevelScore } from '../engine/scoring';
 import type { GameLevel, MatchAttempt, PlayerMatches } from '../game/types';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
+import { LevelSummary } from './gameplay/LevelSummary';
 
 interface FlagMatchEngineProps {
   initialLevelIndex?: number;
@@ -32,9 +35,12 @@ export function FlagMatchEngine({
   const [selectedCountryId, setSelectedCountryId] = useState<string | undefined>();
   const [playerMatches, setPlayerMatches] = useState<PlayerMatches>({});
   const [attempts, setAttempts] = useState<Record<string, AttemptState>>({});
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [incorrectAttemptCount, setIncorrectAttemptCount] = useState(0);
   const [revealedHintFlagIds, setRevealedHintFlagIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const playAudioFeedback = useAudioFeedback();
   const level = getPlayableLevel(levels, levelIndex);
   const selectedCountryName = level.countries.find(
     (country) => country.id === selectedCountryId,
@@ -43,13 +49,41 @@ export function FlagMatchEngine({
     () => validateMatches(level, playerMatches),
     [level, playerMatches],
   );
-  const score = validation.correctCount * 100;
+  const score = calculateLevelScore({
+    elapsedSeconds,
+    hintsUsed: revealedHintFlagIds.size,
+    incorrectAttempts: incorrectAttemptCount,
+    level,
+    validation,
+  });
   const isFinalLevel = levelIndex >= levels.length - 1;
+
+  useEffect(() => {
+    if (validation.isPerfect) {
+      return undefined;
+    }
+
+    const timerId = window.setInterval(() => {
+      setElapsedSeconds((currentSeconds) => currentSeconds + 1);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [validation.isPerfect]);
+
+  useEffect(() => {
+    if (validation.isPerfect) {
+      playAudioFeedback('complete');
+    }
+  }, [playAudioFeedback, validation.isPerfect]);
 
   function resetBoard() {
     setSelectedCountryId(undefined);
     setPlayerMatches({});
     setAttempts({});
+    setElapsedSeconds(0);
+    setIncorrectAttemptCount(0);
     setRevealedHintFlagIds(new Set());
   }
 
@@ -70,9 +104,11 @@ export function FlagMatchEngine({
     }));
 
     if (attempt.feedback === 'incorrect') {
+      setIncorrectAttemptCount((currentCount) => currentCount + 1);
       setRevealedHintFlagIds((currentIds) => new Set(currentIds).add(flagId));
     }
 
+    playAudioFeedback(attempt.feedback);
     setSelectedCountryId(undefined);
   }
 
@@ -114,10 +150,8 @@ export function FlagMatchEngine({
       <GameplayHud
         currentLevel={levelIndex + 1}
         isComplete={validation.isPerfect}
-        isFinalLevel={isFinalLevel}
         mode={level.mode}
-        onNextLevel={handleNextLevel}
-        score={score}
+        score={score.totalScore}
         timeLimitSeconds={level.timeLimitSeconds}
         totalLevels={levels.length}
         validation={validation}
@@ -172,6 +206,19 @@ export function FlagMatchEngine({
             onSelect={setSelectedCountryId}
           />
         </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {validation.isPerfect ? (
+          <LevelSummary
+            elapsedSeconds={elapsedSeconds}
+            hintsUsed={revealedHintFlagIds.size}
+            incorrectAttempts={incorrectAttemptCount}
+            isFinalLevel={isFinalLevel}
+            onNextLevel={handleNextLevel}
+            score={score}
+          />
+        ) : null}
       </AnimatePresence>
     </section>
   );
