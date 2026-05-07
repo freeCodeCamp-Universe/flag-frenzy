@@ -2,7 +2,7 @@ import { GameShell } from './components/GameShell';
 import { FlagMatchEngine } from './components/FlagMatchEngine';
 import { HomeScreen } from './components/HomeScreen';
 import { useGameSession } from './hooks/useGameSession';
-import { beginnerLevel } from './levels/beginner';
+import { campaignLevels } from './levels/campaign';
 import { createHomeLevels } from './levels/homeLevels';
 
 export function App() {
@@ -16,7 +16,7 @@ export function App() {
     <main className="min-h-screen bg-fcc-background text-fcc-foreground">
       <GameShell game={game}>
         <HomeScreen levels={levels} />
-        <FlagMatchEngine level={beginnerLevel} />
+        <FlagMatchEngine levels={campaignLevels} />
       </GameShell>
     </main>
   );

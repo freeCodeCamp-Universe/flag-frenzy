@@ -1,0 +1,114 @@
+import { AnimatePresence, motion } from 'framer-motion';
+import type { DragEvent } from 'react';
+
+import type { MatchFeedback, FlagAsset } from '../../game/types';
+import type { AttemptState } from '../FlagMatchEngine';
+
+interface FlagCardProps {
+  attempt?: AttemptState;
+  feedback: MatchFeedback;
+  flag: FlagAsset;
+  hint?: string;
+  isHintRevealed: boolean;
+  onClick: () => void;
+  onDrop: (event: DragEvent<HTMLButtonElement>) => void;
+  onRevealHint: () => void;
+  selectedCountryName?: string;
+}
+
+export function FlagCard({
+  attempt,
+  feedback,
+  flag,
+  hint,
+  isHintRevealed,
+  onClick,
+  onDrop,
+  onRevealHint,
+  selectedCountryName,
+}: FlagCardProps) {
+  const isCorrect = feedback === 'correct';
+  const isIncorrect = feedback === 'incorrect';
+
+  return (
+    <motion.article
+      animate={
+        isIncorrect
+          ? { x: [0, -8, 8, -4, 4, 0] }
+          : isCorrect
+            ? { boxShadow: '0 0 0 2px rgb(var(--color-success) / 0.5)' }
+            : { boxShadow: '0 0 0 0 rgb(var(--color-success) / 0)' }
+      }
+      className={[
+        'rounded border bg-fcc-panel p-3 transition',
+        isCorrect ? 'border-fcc-success' : '',
+        isIncorrect ? 'border-fcc-danger' : '',
+        feedback === 'pending' ? 'border-fcc-border' : '',
+      ].join(' ')}
+      key={`${flag.id}-${String(attempt?.attemptId ?? 0)}`}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+    >
+      <button
+        aria-label={`Match ${flag.alt}`}
+        className="block w-full rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel"
+        onClick={onClick}
+        onDragOver={(event) => {
+          event.preventDefault();
+        }}
+        onDrop={onDrop}
+        type="button"
+      >
+        <img
+          alt={flag.alt}
+          className="h-40 w-full rounded border border-fcc-border bg-fcc-background object-contain p-2 sm:h-44"
+          src={flag.src}
+        />
+      </button>
+
+      <div className="mt-3 flex min-h-8 items-center justify-between gap-3 font-mono">
+        <span className="text-base text-fcc-muted">
+          {selectedCountryName === undefined
+            ? feedback
+            : `ready: ${selectedCountryName}`}
+        </span>
+        <AnimatePresence>
+          {isCorrect ? (
+            <motion.span
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              aria-label="correct"
+              className="grid size-8 place-items-center rounded bg-fcc-success font-bold text-fcc-background"
+              exit={{ opacity: 0, scale: 0.4 }}
+              initial={{ opacity: 0, rotate: -20, scale: 0.3 }}
+            >
+              ✓
+            </motion.span>
+          ) : null}
+        </AnimatePresence>
+      </div>
+
+      {hint === undefined ? null : (
+        <div className="mt-3 border-t border-fcc-border pt-3">
+          <button
+            className="rounded border border-fcc-highlight px-3 py-2 font-mono text-base text-fcc-highlight outline-none transition hover:bg-fcc-background focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel"
+            onClick={onRevealHint}
+            type="button"
+          >
+            Hint
+          </button>
+          <AnimatePresence>
+            {isHintRevealed ? (
+              <motion.p
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 text-base text-fcc-muted"
+                exit={{ opacity: 0, y: -4 }}
+                initial={{ opacity: 0, y: -4 }}
+              >
+                Hint: {hint}
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      )}
+    </motion.article>
+  );
+}
