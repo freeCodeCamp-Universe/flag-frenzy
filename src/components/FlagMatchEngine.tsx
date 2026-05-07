@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 
 import {
@@ -21,6 +21,7 @@ import { LevelSummary } from './gameplay/LevelSummary';
 interface FlagMatchEngineProps {
   initialLevelIndex?: number;
   levels: GameLevel[];
+  onLevelComplete?: (level: GameLevel, levelNumber: number, score: number) => void;
 }
 
 export interface AttemptState extends MatchAttempt {
@@ -30,6 +31,7 @@ export interface AttemptState extends MatchAttempt {
 export function FlagMatchEngine({
   initialLevelIndex = 0,
   levels,
+  onLevelComplete,
 }: FlagMatchEngineProps) {
   const [levelIndex, setLevelIndex] = useState(initialLevelIndex);
   const [selectedCountryId, setSelectedCountryId] = useState<string | undefined>();
@@ -40,6 +42,7 @@ export function FlagMatchEngine({
   const [revealedHintFlagIds, setRevealedHintFlagIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const completedLevelIdRef = useRef<string | undefined>(undefined);
   const playAudioFeedback = useAudioFeedback();
   const level = getPlayableLevel(levels, levelIndex);
   const selectedCountryName = level.countries.find(
@@ -78,6 +81,15 @@ export function FlagMatchEngine({
     }
   }, [playAudioFeedback, validation.isPerfect]);
 
+  useEffect(() => {
+    if (!validation.isPerfect || completedLevelIdRef.current === level.id) {
+      return;
+    }
+
+    completedLevelIdRef.current = level.id;
+    onLevelComplete?.(level, levelIndex + 1, score.totalScore);
+  }, [level, levelIndex, onLevelComplete, score.totalScore, validation.isPerfect]);
+
   function resetBoard() {
     setSelectedCountryId(undefined);
     setPlayerMatches({});
@@ -85,6 +97,7 @@ export function FlagMatchEngine({
     setElapsedSeconds(0);
     setIncorrectAttemptCount(0);
     setRevealedHintFlagIds(new Set());
+    completedLevelIdRef.current = undefined;
   }
 
   function submitMatch(flagId: string, countryId: string) {

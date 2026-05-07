@@ -1,10 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 
 describe('App', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+  });
+
   it('renders the Flag Frenzy home screen', () => {
     render(<App />);
 
@@ -19,7 +23,7 @@ describe('App', () => {
 
     expect(screen.getAllByRole('button', { name: /Level \d+/ })).toHaveLength(30);
     expect(screen.getByRole('button', { name: 'Level 1 unlocked' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Level 9 unlocked' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Level 2 locked' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Level 30 locked' })).toBeDisabled();
   });
 
@@ -122,6 +126,8 @@ describe('App', () => {
     expect(
       await screen.findByRole('button', { name: 'United States' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 2 unlocked' })).toBeEnabled();
+    expect(localStorage.getItem('flag-frenzy:progress:v1')).toContain('level-01');
   });
 });
 
@@ -147,5 +153,26 @@ function createDataTransfer(): DataTransfer {
     },
     setDragImage: () => undefined,
     types: [],
+  };
+}
+
+function createMemoryStorage(): Storage {
+  const store = new Map<string, string>();
+
+  return {
+    clear: () => {
+      store.clear();
+    },
+    getItem: (key: string) => store.get(key) ?? null,
+    key: (index: number) => [...store.keys()][index] ?? null,
+    get length() {
+      return store.size;
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
   };
 }

@@ -1,6 +1,7 @@
 import type { HomeLevel, LevelStatus } from '../game/types';
 
 interface CreateHomeLevelsOptions {
+  highScores?: Record<string, number>;
   unlockedThrough: number;
   unlockingLevel?: number;
 }
@@ -14,6 +15,7 @@ const levelAccentClassNames = [
 ] as const;
 
 export function createHomeLevels({
+  highScores = {},
   unlockedThrough,
   unlockingLevel,
 }: CreateHomeLevelsOptions): HomeLevel[] {
@@ -26,6 +28,7 @@ export function createHomeLevels({
     });
 
     return {
+      highScore: highScores[`level-${String(number).padStart(2, '0')}`],
       id: `level-${String(number)}`,
       number,
       status,

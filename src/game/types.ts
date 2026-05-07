@@ -11,6 +11,7 @@ export interface GameSession {
 
 export interface HomeLevel {
   accentClassName: string;
+  highScore?: number;
   id: string;
   number: number;
   status: LevelStatus;
@@ -70,4 +71,11 @@ export interface MatchValidationResult {
   missingFlagIds: string[];
   results: MatchResult[];
   totalCount: number;
+}
+
+export interface GameProgress {
+  completedLevelIds: string[];
+  highScores: Record<string, number>;
+  highestUnlockedLevel: number;
+  version: 1;
 }

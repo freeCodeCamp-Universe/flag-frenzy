@@ -64,6 +64,11 @@ function LevelTile({ level }: LevelTileProps) {
         ].join(' ')}
       />
       <span>{level.number}</span>
+      {level.highScore === undefined ? null : (
+        <span className="absolute bottom-1 left-1 right-1 truncate font-mono text-xs text-fcc-success">
+          {level.highScore}
+        </span>
+      )}
       {isLocked ? (
         <span className="sr-only">locked</span>
       ) : (

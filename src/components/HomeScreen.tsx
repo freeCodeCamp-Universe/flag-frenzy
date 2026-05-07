@@ -6,6 +6,7 @@ import type { HomeLevel } from '../game/types';
 
 interface HomeScreenProps {
   levels: HomeLevel[];
+  unlockedCount: number;
 }
 
 const screenTransition = {
@@ -13,7 +14,7 @@ const screenTransition = {
   ease: 'easeOut',
 } as const;
 
-export function HomeScreen({ levels }: HomeScreenProps) {
+export function HomeScreen({ levels, unlockedCount }: HomeScreenProps) {
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
@@ -59,7 +60,9 @@ export function HomeScreen({ levels }: HomeScreenProps) {
             <p className="font-mono text-base text-fcc-muted">select stage</p>
             <h2 className="text-2xl font-bold">Levels</h2>
           </div>
-          <p className="font-mono text-base text-fcc-success">8 unlocked</p>
+          <p className="font-mono text-base text-fcc-success">
+            {unlockedCount} unlocked
+          </p>
         </div>
         <LevelGrid levels={levels} />
       </section>
