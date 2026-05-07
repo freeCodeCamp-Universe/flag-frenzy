@@ -5,6 +5,7 @@ import { statPulseVariants } from '../../utils/animation';
 
 interface GameplayHudProps {
   currentLevel: number;
+  elapsedSeconds: number;
   isComplete: boolean;
   mode: GameLevel['mode'];
   score: number;
@@ -15,6 +16,7 @@ interface GameplayHudProps {
 
 export function GameplayHud({
   currentLevel,
+  elapsedSeconds,
   isComplete,
   mode,
   score,
@@ -22,6 +24,11 @@ export function GameplayHud({
   totalLevels,
   validation,
 }: GameplayHudProps) {
+  const remainingSeconds =
+    mode === 'timed'
+      ? Math.max(0, (timeLimitSeconds ?? 0) - elapsedSeconds)
+      : undefined;
+
   return (
     <div className="border-b border-fcc-border pb-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -43,10 +50,10 @@ export function GameplayHud({
           <Stat label="Score" pulseKey={score} value={String(score)} />
           <Stat
             label={mode === 'timed' ? 'Timer' : 'Goal'}
-            pulseKey={timeLimitSeconds ?? validation.totalCount}
+            pulseKey={remainingSeconds ?? validation.totalCount}
             value={
               mode === 'timed'
-                ? `${String(timeLimitSeconds ?? 0)}s`
+                ? `${String(remainingSeconds ?? 0)}s`
                 : `${String(validation.totalCount * 125)} pts`
             }
           />

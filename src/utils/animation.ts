@@ -1,4 +1,5 @@
 import type { Variants } from 'framer-motion';
+import type { AccessibilitySettings } from '../game/types';
 
 export const quickEase = [0.2, 0, 0, 1] as const;
 
@@ -104,3 +105,20 @@ export const statPulseVariants: Variants = {
     scale: 1,
   },
 };
+
+export function getAnimationDuration(
+  settings: AccessibilitySettings,
+  duration: number,
+): number {
+  return settings.animationSpeed === 'slow' ? duration * 1.75 : duration;
+}
+
+export function getAnimationTransition(
+  settings: AccessibilitySettings,
+  duration: number,
+) {
+  return {
+    duration: getAnimationDuration(settings, duration),
+    ease: quickEase,
+  } as const;
+}

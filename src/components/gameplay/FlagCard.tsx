@@ -1,11 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { DragEvent } from 'react';
 
-import type { MatchFeedback, FlagAsset } from '../../game/types';
+import type { AccessibilitySettings, MatchFeedback, FlagAsset } from '../../game/types';
 import {
   checkmarkVariants,
-  feedbackTransition,
   feedbackVariants,
+  getAnimationTransition,
   hintVariants,
 } from '../../utils/animation';
 import type { AttemptState } from '../FlagMatchEngine';
@@ -21,6 +21,7 @@ interface FlagCardProps {
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   onRevealHint: () => void;
   selectedCountryName?: string;
+  settings: AccessibilitySettings;
 }
 
 export function FlagCard({
@@ -34,6 +35,7 @@ export function FlagCard({
   onDrop,
   onRevealHint,
   selectedCountryName,
+  settings,
 }: FlagCardProps) {
   const isCorrect = feedback === 'correct';
   const isIncorrect = feedback === 'incorrect';
@@ -48,7 +50,7 @@ export function FlagCard({
         feedback === 'pending' ? 'border-fcc-border' : '',
       ].join(' ')}
       key={`${flag.id}-${String(attempt?.attemptId ?? 0)}`}
-      transition={feedbackTransition}
+      transition={getAnimationTransition(settings, 0.28)}
       variants={feedbackVariants}
     >
       <button
@@ -70,10 +72,21 @@ export function FlagCard({
       >
         <img
           alt={flag.alt}
-          className="h-40 w-full rounded border border-fcc-border bg-fcc-background object-contain p-2 sm:h-44"
+          className={[
+            'h-40 w-full rounded border bg-fcc-background object-contain p-2 sm:h-44',
+            settings.useColorblindOutlines
+              ? 'border-4 border-dashed border-fcc-highlight'
+              : 'border-fcc-border',
+          ].join(' ')}
           src={flag.src}
         />
       </button>
+
+      {settings.useColorblindOutlines ? (
+        <p className="mt-2 font-mono text-base text-fcc-highlight">
+          outlined flag target
+        </p>
+      ) : null}
 
       <div className="mt-3 flex min-h-8 items-center justify-between gap-3 font-mono">
         <span className="text-base text-fcc-muted">
@@ -92,6 +105,7 @@ export function FlagCard({
               exit="hidden"
               initial="hidden"
               variants={checkmarkVariants}
+              transition={getAnimationTransition(settings, 0.18)}
             >
               ✓
             </motion.span>
@@ -116,6 +130,7 @@ export function FlagCard({
                 exit="hidden"
                 initial="hidden"
                 variants={hintVariants}
+                transition={getAnimationTransition(settings, 0.24)}
               >
                 Hint: {hint}
               </motion.p>
@@ -127,6 +142,7 @@ export function FlagCard({
               className="mt-2 font-mono text-base text-fcc-danger"
               initial="hidden"
               variants={hintVariants}
+              transition={getAnimationTransition(settings, 0.24)}
             >
               Not quite. Use the hint and try another country.
             </motion.p>

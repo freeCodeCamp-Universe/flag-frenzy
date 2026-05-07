@@ -2,6 +2,14 @@ export type GameStatus = 'idle' | 'playing' | 'paused' | 'complete';
 export type LevelStatus = 'locked' | 'unlocked' | 'unlocking';
 export type LevelMode = 'timed' | 'score';
 export type MatchFeedback = 'correct' | 'incorrect' | 'pending';
+export type AnimationSpeed = 'standard' | 'slow';
+export type FontScale = 'standard' | 'large' | 'extra-large';
+
+export interface AccessibilitySettings {
+  animationSpeed: AnimationSpeed;
+  fontScale: FontScale;
+  useColorblindOutlines: boolean;
+}
 
 export interface GameSession {
   lives: number;

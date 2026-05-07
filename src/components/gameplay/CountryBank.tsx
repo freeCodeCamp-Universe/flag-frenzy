@@ -6,12 +6,14 @@ interface CountryBankProps {
   countries: CountryOption[];
   onSelect: (countryId: string) => void;
   selectedCountryId?: string;
+  selectedCountryName?: string;
 }
 
 export function CountryBank({
   countries,
   onSelect,
   selectedCountryId,
+  selectedCountryName,
 }: CountryBankProps) {
   return (
     <aside
@@ -19,13 +21,21 @@ export function CountryBank({
       className="rounded border border-fcc-border p-3"
     >
       <h3 className="font-mono text-xl font-bold">Countries</h3>
-      <p className="mt-1 font-mono text-base text-fcc-muted">Click or drag</p>
+      <p className="mt-1 font-mono text-base text-fcc-muted">
+        Click, press Enter, or drag
+      </p>
+      <p aria-live="polite" className="mt-2 font-mono text-base text-fcc-highlight">
+        {selectedCountryName === undefined
+          ? 'No country selected'
+          : `${selectedCountryName} selected`}
+      </p>
       <div className="mt-3 grid gap-2">
         {countries.map((country) => {
           const isSelected = country.id === selectedCountryId;
 
           return (
             <motion.button
+              aria-pressed={isSelected}
               className={[
                 'rounded border px-3 py-3 text-left font-mono outline-none transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-surface',
                 isSelected

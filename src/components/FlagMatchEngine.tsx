@@ -11,15 +11,21 @@ import {
   validateMatches,
 } from '../engine/matching';
 import { calculateLevelScore } from '../engine/scoring';
-import type { GameLevel, MatchAttempt, PlayerMatches } from '../game/types';
+import type {
+  AccessibilitySettings,
+  GameLevel,
+  MatchAttempt,
+  PlayerMatches,
+} from '../game/types';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
-import { levelAdvanceVariants } from '../utils/animation';
+import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation';
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
 import { LevelSummary } from './gameplay/LevelSummary';
 
 interface FlagMatchEngineProps {
+  accessibilitySettings: AccessibilitySettings;
   initialLevelIndex?: number;
   levels: GameLevel[];
   onLevelComplete?: (level: GameLevel, levelNumber: number, score: number) => void;
@@ -30,6 +36,7 @@ export interface AttemptState extends MatchAttempt {
 }
 
 export function FlagMatchEngine({
+  accessibilitySettings,
   initialLevelIndex = 0,
   levels,
   onLevelComplete,
@@ -163,6 +170,7 @@ export function FlagMatchEngine({
     >
       <GameplayHud
         currentLevel={levelIndex + 1}
+        elapsedSeconds={elapsedSeconds}
         isComplete={validation.isPerfect}
         mode={level.mode}
         score={score.totalScore}
@@ -178,6 +186,7 @@ export function FlagMatchEngine({
           exit="exit"
           initial="enter"
           key={level.id}
+          transition={getAnimationTransition(accessibilitySettings, 0.24)}
           variants={levelAdvanceVariants}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -199,6 +208,7 @@ export function FlagMatchEngine({
                   hint={hint}
                   isHintRevealed={isHintRevealed}
                   isLocked={locked}
+                  settings={accessibilitySettings}
                   onClick={() => {
                     handleFlagClick(flag.id);
                   }}
@@ -217,6 +227,7 @@ export function FlagMatchEngine({
           <CountryBank
             countries={level.countries}
             selectedCountryId={selectedCountryId}
+            selectedCountryName={selectedCountryName}
             onSelect={setSelectedCountryId}
           />
         </motion.div>
@@ -231,6 +242,7 @@ export function FlagMatchEngine({
             isFinalLevel={isFinalLevel}
             onNextLevel={handleNextLevel}
             score={score}
+            settings={accessibilitySettings}
           />
         ) : null}
       </AnimatePresence>
