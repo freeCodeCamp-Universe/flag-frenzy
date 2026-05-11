@@ -9,7 +9,7 @@ import {
 import { campaignLevels } from '../levels/campaign';
 
 describe('scoring engine', () => {
-  it('awards correctness, speed, and no-hint bonuses', () => {
+  it('awards correctness and speed bonuses', () => {
     const level = campaignLevels[0];
 
     if (level === undefined) {
@@ -21,41 +21,19 @@ describe('scoring engine', () => {
     expect(
       calculateLevelScore({
         elapsedSeconds: 20,
-        hintsUsed: 0,
         incorrectAttempts: 0,
         level,
         validation,
       }),
     ).toEqual({
       baseScore: 400,
-      hintBonus: 100,
       incorrectPenalty: 0,
       speedBonus: 125,
-      totalScore: 625,
+      totalScore: 525,
     });
   });
 
-  it('removes the no-hint bonus when hints are used', () => {
-    const level = campaignLevels[0];
-
-    if (level === undefined) {
-      throw new Error('Expected level 1.');
-    }
-
-    const validation = validateMatches(level, level.correctMatches);
-    const score = calculateLevelScore({
-      elapsedSeconds: 20,
-      hintsUsed: 1,
-      incorrectAttempts: 0,
-      level,
-      validation,
-    });
-
-    expect(score.hintBonus).toBe(0);
-    expect(score.totalScore).toBe(525);
-  });
-
-  it('does not award speed or no-hint bonuses before a perfect level', () => {
+  it('does not award speed bonuses before a perfect level', () => {
     const level = campaignLevels[0];
 
     if (level === undefined) {
@@ -67,7 +45,6 @@ describe('scoring engine', () => {
     });
     const score = calculateLevelScore({
       elapsedSeconds: 5,
-      hintsUsed: 0,
       incorrectAttempts: 0,
       level,
       validation,
@@ -75,7 +52,6 @@ describe('scoring engine', () => {
 
     expect(score).toMatchObject({
       baseScore: 100,
-      hintBonus: 0,
       speedBonus: 0,
       totalScore: 100,
     });
@@ -91,7 +67,6 @@ describe('scoring engine', () => {
     const validation = validateMatches(level, {});
     const score = calculateLevelScore({
       elapsedSeconds: 40,
-      hintsUsed: 2,
       incorrectAttempts: 20,
       level,
       validation,
@@ -107,7 +82,6 @@ describe('scoring engine', () => {
       expect(
         calculateLevelScore({
           elapsedSeconds: 10,
-          hintsUsed: 0,
           incorrectAttempts: 0,
           level,
           validation: validateMatches(level, level.correctMatches),
@@ -139,13 +113,11 @@ describe('scoring engine', () => {
     const validation = validateMatches(level, level.correctMatches);
     const score = calculateLevelScore({
       elapsedSeconds: Number.NaN,
-      hintsUsed: -1,
       incorrectAttempts: -10,
       level,
       validation,
     });
 
-    expect(score.hintBonus).toBe(100);
     expect(score.incorrectPenalty).toBe(0);
     expect(score.speedBonus).toBe(225);
   });

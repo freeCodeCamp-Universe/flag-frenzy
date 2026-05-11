@@ -59,10 +59,4 @@ describe('campaign levels', () => {
       expect(Object.keys(level.correctMatches)).toHaveLength(level.flags.length);
     }
   });
-
-  it('provides optional hints for every level', () => {
-    for (const level of campaignLevels) {
-      expect(level.hints?.length ?? 0).toBeGreaterThan(0);
-    }
-  });
 });

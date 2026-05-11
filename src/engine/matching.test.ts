@@ -4,7 +4,6 @@ import { beginnerLevel } from '../levels/beginner';
 import {
   applyMatchAttempt,
   createMatchAttempt,
-  getHintForFlag,
   getMatchFeedback,
   isCorrectMatch,
   isMatchLocked,
@@ -93,15 +92,6 @@ describe('matching engine', () => {
     ).toBe('incorrect');
   });
 
-  it('finds optional hints by flag or correct country', () => {
-    expect(getHintForFlag(beginnerLevel, 'flag-japan')).toBe(
-      'This island nation uses a red circle on a white field.',
-    );
-    expect(getHintForFlag(beginnerLevel, 'flag-canada')).toBe(
-      'The maple leaf is the giveaway.',
-    );
-  });
-
   it('scores a complete player submission', () => {
     const result = validateMatches(beginnerLevel, {
       'flag-brazil': 'country-brazil',
@@ -175,34 +165,6 @@ describe('matching engine', () => {
         'Duplicate country id "country-canada".',
         'Duplicate flag id "flag-canada".',
         'Option count must match the number of countries.',
-      ]),
-    );
-  });
-
-  it('reports malformed hints', () => {
-    const invalidLevel = {
-      ...beginnerLevel,
-      hints: [
-        {
-          text: '',
-        },
-        {
-          countryId: 'country-missing',
-          text: 'Unknown country.',
-        },
-        {
-          flagId: 'flag-missing',
-          text: 'Unknown flag.',
-        },
-      ],
-    };
-
-    expect(validateLevel(invalidLevel)).toEqual(
-      expect.arrayContaining([
-        'Hint text cannot be empty.',
-        'Hint must reference a country or flag.',
-        'Hint references unknown country "country-missing".',
-        'Hint references unknown flag "flag-missing".',
       ]),
     );
   });

@@ -1,6 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  act,
+  waitForElementToBeRemoved,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 import { createMemoryStorage } from './test/createMemoryStorage';
@@ -10,6 +17,10 @@ describe('App', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createMemoryStorage());
     window.history.pushState({}, '', '/');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders the Flag Frenzy home screen', () => {
@@ -81,6 +92,50 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
   });
 
+  it('shuffles in extra wrong country options on the game board', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    const countryButtons = within(
+      screen.getByLabelText('Country options'),
+    ).getAllByRole('button');
+    const levelOneCountryNames = new Set(['Canada', 'Japan', 'Brazil', 'France']);
+
+    expect(countryButtons.length).toBeGreaterThan(levelOneCountryNames.size);
+    expect(
+      countryButtons.some((button) => !levelOneCountryNames.has(button.textContent)),
+    ).toBe(true);
+  });
+
+  it('pauses, resumes, and quits from the pause modal', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+
+    expect(screen.getByRole('dialog', { name: 'Pause Menu' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Resume' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quit' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Resume' }));
+
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole('dialog', { name: 'Pause Menu' }),
+    );
+    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+    await user.click(screen.getByRole('button', { name: 'Quit' }));
+
+    expect(screen.getByRole('heading', { name: 'Flag Frenzy' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
+  });
+
   it('starts the next uncompleted level from saved progress', async () => {
     const user = userEvent.setup();
 
@@ -104,7 +159,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'United States' })).toBeInTheDocument();
   });
 
-  it('keeps incorrect matches retryable and reveals a hint', async () => {
+  it('keeps incorrect matches retryable', async () => {
     const user = userEvent.setup();
 
     render(<App />);
@@ -115,12 +170,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
 
     expect(screen.getByText('incorrect')).toBeInTheDocument();
-    expect(
-      screen.getByText('Hint: The maple leaf is the giveaway.'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Not quite. Use the hint and try another country.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('Not quite. Try another country.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Hint' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeEnabled();
 
@@ -129,6 +180,32 @@ describe('App', () => {
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+  });
+
+  it('shows summary on timeout without unlocking the next level', async () => {
+    vi.useFakeTimers();
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+
+    act(() => {
+      vi.advanceTimersByTime(45_000);
+    });
+
+    vi.useRealTimers();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Level Summary' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('time expired')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry Level' })).toBeInTheDocument();
+    expect(localStorage.getItem('flag-frenzy:progress:v1')).not.toContain('level-01');
+
+    fireEvent.click(screen.getByRole('link', { name: 'flag-frenzy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Level Select' }));
+
+    expect(screen.getByRole('button', { name: 'Level 2 locked' })).toBeDisabled();
   });
 
   it('matches flags to countries by drag and drop', async () => {
@@ -149,30 +226,6 @@ describe('App', () => {
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
-  });
-
-  it('reveals optional hints on demand', async () => {
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await user.click(screen.getByRole('button', { name: 'Start' }));
-
-    expect(
-      screen.queryByText('Hint: The maple leaf is the giveaway.'),
-    ).not.toBeInTheDocument();
-
-    const firstHintButton = screen.getAllByRole('button', { name: 'Hint' })[0];
-
-    if (firstHintButton === undefined) {
-      throw new Error('Expected at least one hint button.');
-    }
-
-    await user.click(firstHintButton);
-
-    expect(
-      screen.getByText('Hint: The maple leaf is the giveaway.'),
-    ).toBeInTheDocument();
   });
 
   it('advances to the next level after a perfect round', async () => {

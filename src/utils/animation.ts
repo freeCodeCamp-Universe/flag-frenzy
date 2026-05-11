@@ -46,18 +46,6 @@ export const checkmarkVariants: Variants = {
   },
 };
 
-export const hintVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: -4,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: screenTransition,
-  },
-};
-
 export const levelAdvanceVariants: Variants = {
   enter: {
     opacity: 0,

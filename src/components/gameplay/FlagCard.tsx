@@ -6,7 +6,6 @@ import {
   checkmarkVariants,
   feedbackVariants,
   getAnimationTransition,
-  hintVariants,
 } from '../../utils/animation';
 import type { AttemptState } from '../FlagMatchEngine';
 
@@ -14,12 +13,9 @@ interface FlagCardProps {
   attempt?: AttemptState;
   feedback: MatchFeedback;
   flag: FlagAsset;
-  hint?: string;
-  isHintRevealed: boolean;
   isLocked: boolean;
   onClick: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
-  onRevealHint: () => void;
   selectedCountryName?: string;
 }
 
@@ -27,12 +23,9 @@ export function FlagCard({
   attempt,
   feedback,
   flag,
-  hint,
-  isHintRevealed,
   isLocked,
   onClick,
   onDrop,
-  onRevealHint,
   selectedCountryName,
 }: FlagCardProps) {
   const isCorrect = feedback === 'correct';
@@ -80,7 +73,9 @@ export function FlagCard({
           {isLocked
             ? 'locked'
             : selectedCountryName === undefined
-              ? feedback
+              ? feedback === 'pending'
+                ? ''
+                : feedback
               : `ready: ${selectedCountryName}`}
         </span>
         <AnimatePresence>
@@ -100,42 +95,13 @@ export function FlagCard({
         </AnimatePresence>
       </div>
 
-      {hint === undefined ? null : (
+      {isIncorrect ? (
         <div className="mt-3 border-t border-fcc-border pt-3">
-          <button
-            className="rounded border border-fcc-highlight px-3 py-2 font-mono text-base text-fcc-highlight outline-none transition hover:bg-fcc-background focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel"
-            onClick={onRevealHint}
-            type="button"
-          >
-            Hint
-          </button>
-          <AnimatePresence>
-            {isHintRevealed ? (
-              <motion.p
-                animate="visible"
-                className="mt-3 text-base text-fcc-muted"
-                exit="hidden"
-                initial="hidden"
-                variants={hintVariants}
-                transition={getAnimationTransition(0.24)}
-              >
-                Hint: {hint}
-              </motion.p>
-            ) : null}
-          </AnimatePresence>
-          {isIncorrect ? (
-            <motion.p
-              animate="visible"
-              className="mt-2 font-mono text-base text-fcc-danger"
-              initial="hidden"
-              variants={hintVariants}
-              transition={getAnimationTransition(0.24)}
-            >
-              Not quite. Use the hint and try another country.
-            </motion.p>
-          ) : null}
+          <p className="font-mono text-base text-fcc-danger">
+            Not quite. Try another country.
+          </p>
         </div>
-      )}
+      ) : null}
     </motion.article>
   );
 }

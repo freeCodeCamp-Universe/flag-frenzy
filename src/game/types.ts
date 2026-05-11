@@ -28,18 +28,11 @@ export interface CountryOption {
   name: string;
 }
 
-export interface LevelHint {
-  countryId?: string;
-  flagId?: string;
-  text: string;
-}
-
 export interface GameLevel {
   complexity: number;
   correctMatches: Record<string, string>;
   countries: CountryOption[];
   flags: FlagAsset[];
-  hints?: LevelHint[];
   id: string;
   mode: LevelMode;
   optionCount: number;

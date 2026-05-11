@@ -5,18 +5,18 @@ import { getAnimationTransition, popVariants } from '../../utils/animation';
 
 interface LevelSummaryProps {
   elapsedSeconds: number;
-  hintsUsed: number;
   incorrectAttempts: number;
   isFinalLevel: boolean;
+  isPassed: boolean;
   onNextLevel: () => void;
   score: LevelScoreBreakdown;
 }
 
 export function LevelSummary({
   elapsedSeconds,
-  hintsUsed,
   incorrectAttempts,
   isFinalLevel,
+  isPassed,
   onNextLevel,
   score,
 }: LevelSummaryProps) {
@@ -24,7 +24,10 @@ export function LevelSummary({
     <motion.section
       animate="visible"
       aria-labelledby="level-summary-title"
-      className="mt-5 rounded border border-fcc-success bg-fcc-background p-4"
+      className={[
+        'mt-5 rounded border bg-fcc-background p-4',
+        isPassed ? 'border-fcc-success' : 'border-fcc-danger',
+      ].join(' ')}
       exit="hidden"
       initial="hidden"
       transition={getAnimationTransition(0.24)}
@@ -32,7 +35,14 @@ export function LevelSummary({
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="font-mono text-base text-fcc-success">level cleared</p>
+          <p
+            className={[
+              'font-mono text-base',
+              isPassed ? 'text-fcc-success' : 'text-fcc-danger',
+            ].join(' ')}
+          >
+            {isPassed ? 'level cleared' : 'time expired'}
+          </p>
           <h3 id="level-summary-title" className="text-2xl font-bold">
             Level Summary
           </h3>
@@ -48,9 +58,7 @@ export function LevelSummary({
       <dl className="mt-4 grid gap-2 font-mono text-base sm:grid-cols-2 lg:grid-cols-3">
         <SummaryStat label="Base" value={score.baseScore} />
         <SummaryStat label="Speed" value={score.speedBonus} />
-        <SummaryStat label="No hints" value={score.hintBonus} />
         <SummaryStat label="Penalty" value={-score.incorrectPenalty} />
-        <SummaryStat label="Hints used" value={hintsUsed} />
         <SummaryStat label="Time" value={`${String(elapsedSeconds)}s`} />
         <SummaryStat label="Retries" value={incorrectAttempts} />
       </dl>
@@ -62,7 +70,7 @@ export function LevelSummary({
         whileHover={{ y: -2, scale: 1.03 }}
         whileTap={{ scale: 0.98 }}
       >
-        {isFinalLevel ? 'Replay Level' : 'Next Level'}
+        {isPassed ? (isFinalLevel ? 'Replay Level' : 'Next Level') : 'Retry Level'}
       </motion.button>
     </motion.section>
   );

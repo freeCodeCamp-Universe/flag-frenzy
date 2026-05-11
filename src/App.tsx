@@ -37,7 +37,10 @@ function FlagFrenzyRoutes() {
   const nextLevelNumber = getNextUncompletedLevelNumber(progress.completedLevelIds);
 
   function handleLevelComplete(summary: LevelCompletionSummary) {
-    completeLevel(summary.level, summary.levelNumber, summary.score.totalScore);
+    if (summary.isPassed) {
+      completeLevel(summary.level, summary.levelNumber, summary.score.totalScore);
+    }
+
     setLevelSummary(summary);
     void navigate('/summary');
   }
@@ -48,9 +51,11 @@ function FlagFrenzyRoutes() {
       return;
     }
 
-    const nextLevelNumber = levelSummary.isFinalLevel
-      ? levelSummary.levelNumber
-      : levelSummary.levelNumber + 1;
+    const nextLevelNumber = levelSummary.isPassed
+      ? levelSummary.isFinalLevel
+        ? levelSummary.levelNumber
+        : levelSummary.levelNumber + 1
+      : levelSummary.levelNumber;
 
     void navigate(`/play?level=${String(nextLevelNumber)}`);
   }
@@ -80,9 +85,9 @@ function FlagFrenzyRoutes() {
               ) : (
                 <LevelSummary
                   elapsedSeconds={levelSummary.elapsedSeconds}
-                  hintsUsed={levelSummary.hintsUsed}
                   incorrectAttempts={levelSummary.incorrectAttempts}
                   isFinalLevel={levelSummary.isFinalLevel}
+                  isPassed={levelSummary.isPassed}
                   onNextLevel={handleNextLevel}
                   score={levelSummary.score}
                 />
@@ -115,6 +120,7 @@ interface PlayPageProps {
 }
 
 function PlayPage({ onLevelComplete }: PlayPageProps) {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedLevel = Number(searchParams.get('level') ?? '1');
   const levelIndex = Number.isInteger(requestedLevel)
@@ -127,6 +133,9 @@ function PlayPage({ onLevelComplete }: PlayPageProps) {
       initialLevelIndex={levelIndex}
       levels={campaignLevels}
       onLevelComplete={onLevelComplete}
+      onQuit={() => {
+        void navigate('/');
+      }}
     />
   );
 }

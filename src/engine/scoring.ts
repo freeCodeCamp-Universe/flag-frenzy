@@ -2,7 +2,6 @@ import type { GameLevel, MatchValidationResult } from '../game/types';
 
 export interface ScoreInput {
   elapsedSeconds: number;
-  hintsUsed: number;
   incorrectAttempts: number;
   level: GameLevel;
   validation: MatchValidationResult;
@@ -10,20 +9,17 @@ export interface ScoreInput {
 
 export interface LevelScoreBreakdown {
   baseScore: number;
-  hintBonus: number;
   incorrectPenalty: number;
   speedBonus: number;
   totalScore: number;
 }
 
 const pointsPerCorrectMatch = 100;
-const noHintBonusPerFlag = 25;
 const incorrectPenalty = 10;
 const speedBonusPerSecond = 5;
 
 export function calculateLevelScore({
   elapsedSeconds,
-  hintsUsed,
   incorrectAttempts,
   level,
   validation,
@@ -32,19 +28,14 @@ export function calculateLevelScore({
   const speedBonus = validation.isPerfect
     ? calculateSpeedBonus(level, normalizeCount(elapsedSeconds))
     : 0;
-  const hintBonus =
-    validation.isPerfect && normalizeCount(hintsUsed) === 0
-      ? validation.totalCount * noHintBonusPerFlag
-      : 0;
   const penalty = Math.min(
     normalizeCount(incorrectAttempts) * incorrectPenalty,
-    baseScore + speedBonus + hintBonus,
+    baseScore + speedBonus,
   );
-  const totalScore = Math.max(0, baseScore + speedBonus + hintBonus - penalty);
+  const totalScore = Math.max(0, baseScore + speedBonus - penalty);
 
   return {
     baseScore,
-    hintBonus,
     incorrectPenalty: penalty,
     speedBonus,
     totalScore,

@@ -8,6 +8,7 @@ interface GameplayHudProps {
   elapsedSeconds: number;
   isComplete: boolean;
   mode: GameLevel['mode'];
+  onPause: () => void;
   score: number;
   timeLimitSeconds?: number;
   totalLevels: number;
@@ -19,6 +20,7 @@ export function GameplayHud({
   elapsedSeconds,
   isComplete,
   mode,
+  onPause,
   score,
   timeLimitSeconds,
   totalLevels,
@@ -41,23 +43,33 @@ export function GameplayHud({
           </h2>
         </div>
 
-        <dl className="grid grid-cols-3 gap-2 font-mono text-base">
-          <Stat
-            pulseKey={validation.correctCount}
-            label="Correct"
-            value={`${String(validation.correctCount)}/${String(validation.totalCount)}`}
-          />
-          <Stat label="Score" pulseKey={score} value={String(score)} />
-          <Stat
-            label={mode === 'timed' ? 'Timer' : 'Goal'}
-            pulseKey={remainingSeconds ?? validation.totalCount}
-            value={
-              mode === 'timed'
-                ? `${String(remainingSeconds ?? 0)}s`
-                : `${String(validation.totalCount * 125)} pts`
-            }
-          />
-        </dl>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <dl className="grid grid-cols-3 gap-2 font-mono text-base">
+            <Stat
+              pulseKey={validation.correctCount}
+              label="Correct"
+              value={`${String(validation.correctCount)}/${String(validation.totalCount)}`}
+            />
+            <Stat label="Score" pulseKey={score} value={String(score)} />
+            <Stat
+              label={mode === 'timed' ? 'Timer' : 'Goal'}
+              pulseKey={remainingSeconds ?? validation.totalCount}
+              value={
+                mode === 'timed'
+                  ? `${String(remainingSeconds ?? 0)}s`
+                  : `${String(validation.totalCount * 125)} pts`
+              }
+            />
+          </dl>
+          <button
+            className="min-h-[4.25rem] rounded border border-fcc-highlight bg-fcc-background px-4 py-2 font-mono font-bold text-fcc-highlight outline-none transition hover:bg-fcc-panel focus-visible:ring-2 focus-visible:ring-focus"
+            disabled={isComplete}
+            onClick={onPause}
+            type="button"
+          >
+            Pause
+          </button>
+        </div>
       </div>
 
       {isComplete ? (
