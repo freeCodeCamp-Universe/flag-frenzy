@@ -1,11 +1,13 @@
 # Flag Frenzy
 
 Flag Frenzy is a fast flag-matching game built with Vite, React, TypeScript,
-Tailwind CSS, Framer Motion, and Vitest.
+Tailwind CSS, Framer Motion, React Router, and Vitest.
 
 Players match country flags to country names by clicking or dragging country
 options onto flag cards. Correct matches lock in. Incorrect matches stay
-retryable and apply a scoring penalty.
+retryable and apply a scoring penalty. Each board shuffles the flag cards,
+shuffles the country bank, and adds extra wrong country options so players have
+to identify each flag instead of matching by list order.
 
 ## Game Concept
 
@@ -15,9 +17,21 @@ The core loop is simple:
 2. Match it to the correct flag by clicking a flag card or dragging the country.
 3. Build a perfect level clear by locking every flag-country pair.
 4. Earn score from correctness and speed.
-5. Unlock the next level and persist progress locally.
+5. Unlock the next level only after a perfect clear and persist progress locally.
 
 The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style.
+
+## Routes
+
+The app uses React Router for three main pages:
+
+- `/`: centered home screen with Start and Level Select actions
+- `/levels`: level select grid with locked/unlocked states and high scores
+- `/play?level=N`: active matching board for a campaign level
+- `/summary`: result screen after a clear or timed-out attempt
+
+Start opens the next uncompleted level based on saved progress. Level Select
+lets players manually choose any unlocked level.
 
 ## Flag Matching Logic
 
@@ -26,8 +40,9 @@ Playable levels use the `GameLevel` model:
 - `flags`: flag image assets with stable ids
 - `countries`: country options with stable ids
 - `correctMatches`: map of `flagId -> countryId`
-  The matching engine is intentionally pure and lives in `src/engine/matching.ts`.
-  It handles:
+
+The matching engine is intentionally pure and lives in `src/engine/matching.ts`.
+It handles:
 
 - validating level structure
 - creating match attempts
@@ -38,6 +53,10 @@ Playable levels use the `GameLevel` model:
 Incorrect attempts do not write into `playerMatches`; only correct answers lock.
 This keeps score, completion, and persistence logic clean.
 
+The React board layer shuffles flags and creates the country option bank at
+runtime. The option bank includes the correct countries plus distractors from
+other campaign levels.
+
 ## Scoring
 
 Scoring lives in `src/engine/scoring.ts`.
@@ -46,10 +65,18 @@ Score is based on:
 
 - `100` points per correct match
 - speed bonus on perfect completion
-- retry penalty for incorrect attempts
+- penalty for wrong country guesses
 
-The score screen shows the full breakdown: base score, speed, penalty, elapsed
-time, retries, and final score.
+The summary screen shows base score, speed, penalty, elapsed time, wrong guesses,
+level retries, and final score.
+
+Timed levels end when the timer reaches zero. A timed-out attempt still shows
+the summary screen, but it does not record completion, save a high score, or
+unlock the next level. The summary button retries the same level. Only a perfect
+clear unlocks future levels.
+
+Players can pause during a level. The pause modal lets them resume the current
+attempt or quit back to the home screen.
 
 ## 30-Level Progression
 
@@ -72,6 +99,9 @@ Persisted progress includes:
 - high scores by level id
 
 Malformed progress is sanitized before use.
+
+Retry counts are session state only. They show how many failed attempts the
+player has made for the current level during the active app session.
 
 ## Development
 
