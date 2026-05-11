@@ -14,8 +14,6 @@ import type { LevelCompletionSummary } from './components/FlagMatchEngine';
 import { HomeScreen } from './components/HomeScreen';
 import { LevelSelectScreen } from './components/LevelSelectScreen';
 import { LevelSummary } from './components/gameplay/LevelSummary';
-import type { AccessibilitySettings } from './game/types';
-import { useAccessibilitySettings } from './hooks/useAccessibilitySettings';
 import { useProgression } from './hooks/useProgression';
 import { campaignLevels } from './levels/campaign';
 import { createHomeLevels } from './levels/homeLevels';
@@ -29,7 +27,6 @@ export function App() {
 }
 
 function FlagFrenzyRoutes() {
-  const { settings, updateSettings } = useAccessibilitySettings();
   const { completeLevel, progress } = useProgression();
   const navigate = useNavigate();
   const [levelSummary, setLevelSummary] = useState<LevelCompletionSummary>();
@@ -37,6 +34,7 @@ function FlagFrenzyRoutes() {
     highScores: progress.highScores,
     unlockedThrough: progress.highestUnlockedLevel,
   });
+  const nextLevelNumber = getNextUncompletedLevelNumber(progress.completedLevelIds);
 
   function handleLevelComplete(summary: LevelCompletionSummary) {
     completeLevel(summary.level, summary.levelNumber, summary.score.totalScore);
@@ -59,9 +57,9 @@ function FlagFrenzyRoutes() {
 
   return (
     <main className="min-h-screen bg-fcc-background text-fcc-foreground">
-      <GameShell settings={settings} onAccessibilityChange={updateSettings}>
+      <GameShell>
         <Routes>
-          <Route element={<HomeScreen />} path="/" />
+          <Route element={<HomeScreen nextLevelNumber={nextLevelNumber} />} path="/" />
           <Route
             element={
               <LevelSelectScreen
@@ -72,12 +70,7 @@ function FlagFrenzyRoutes() {
             path="/levels"
           />
           <Route
-            element={
-              <PlayPage
-                accessibilitySettings={settings}
-                onLevelComplete={handleLevelComplete}
-              />
-            }
+            element={<PlayPage onLevelComplete={handleLevelComplete} />}
             path="/play"
           />
           <Route
@@ -92,7 +85,6 @@ function FlagFrenzyRoutes() {
                   isFinalLevel={levelSummary.isFinalLevel}
                   onNextLevel={handleNextLevel}
                   score={levelSummary.score}
-                  settings={settings}
                 />
               )
             }
@@ -105,12 +97,24 @@ function FlagFrenzyRoutes() {
   );
 }
 
+function getNextUncompletedLevelNumber(completedLevelIds: string[]): number {
+  const completedIds = new Set(completedLevelIds);
+  const nextLevelIndex = campaignLevels.findIndex(
+    (level) => !completedIds.has(level.id),
+  );
+
+  if (nextLevelIndex === -1) {
+    return campaignLevels.length;
+  }
+
+  return nextLevelIndex + 1;
+}
+
 interface PlayPageProps {
-  accessibilitySettings: AccessibilitySettings;
   onLevelComplete: (summary: LevelCompletionSummary) => void;
 }
 
-function PlayPage({ accessibilitySettings, onLevelComplete }: PlayPageProps) {
+function PlayPage({ onLevelComplete }: PlayPageProps) {
   const [searchParams] = useSearchParams();
   const requestedLevel = Number(searchParams.get('level') ?? '1');
   const levelIndex = Number.isInteger(requestedLevel)
@@ -120,7 +124,6 @@ function PlayPage({ accessibilitySettings, onLevelComplete }: PlayPageProps) {
   return (
     <FlagMatchEngine
       key={levelIndex}
-      accessibilitySettings={accessibilitySettings}
       initialLevelIndex={levelIndex}
       levels={campaignLevels}
       onLevelComplete={onLevelComplete}

@@ -17,8 +17,7 @@ The core loop is simple:
 4. Earn score from correctness, speed, and clearing without hints.
 5. Unlock the next level and persist progress locally.
 
-The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style with
-accessible font scaling and optional slower animations.
+The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style.
 
 ## Flag Matching Logic
 

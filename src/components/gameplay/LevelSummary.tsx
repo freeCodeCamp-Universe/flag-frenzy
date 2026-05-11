@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 
 import type { LevelScoreBreakdown } from '../../engine/scoring';
-import type { AccessibilitySettings } from '../../game/types';
 import { getAnimationTransition, popVariants } from '../../utils/animation';
 
 interface LevelSummaryProps {
@@ -11,7 +10,6 @@ interface LevelSummaryProps {
   isFinalLevel: boolean;
   onNextLevel: () => void;
   score: LevelScoreBreakdown;
-  settings: AccessibilitySettings;
 }
 
 export function LevelSummary({
@@ -21,7 +19,6 @@ export function LevelSummary({
   isFinalLevel,
   onNextLevel,
   score,
-  settings,
 }: LevelSummaryProps) {
   return (
     <motion.section
@@ -30,7 +27,7 @@ export function LevelSummary({
       className="mt-5 rounded border border-fcc-success bg-fcc-background p-4"
       exit="hidden"
       initial="hidden"
-      transition={getAnimationTransition(settings, 0.24)}
+      transition={getAnimationTransition(0.24)}
       variants={popVariants}
     >
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

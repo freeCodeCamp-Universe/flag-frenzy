@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import type { DragEvent } from 'react';
 
-import type { AccessibilitySettings, MatchFeedback, FlagAsset } from '../../game/types';
+import type { MatchFeedback, FlagAsset } from '../../game/types';
 import {
   checkmarkVariants,
   feedbackVariants,
@@ -21,7 +21,6 @@ interface FlagCardProps {
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   onRevealHint: () => void;
   selectedCountryName?: string;
-  settings: AccessibilitySettings;
 }
 
 export function FlagCard({
@@ -35,7 +34,6 @@ export function FlagCard({
   onDrop,
   onRevealHint,
   selectedCountryName,
-  settings,
 }: FlagCardProps) {
   const isCorrect = feedback === 'correct';
   const isIncorrect = feedback === 'incorrect';
@@ -50,7 +48,7 @@ export function FlagCard({
         feedback === 'pending' ? 'border-fcc-border' : '',
       ].join(' ')}
       key={`${flag.id}-${String(attempt?.attemptId ?? 0)}`}
-      transition={getAnimationTransition(settings, 0.28)}
+      transition={getAnimationTransition(0.28)}
       variants={feedbackVariants}
     >
       <button
@@ -94,7 +92,7 @@ export function FlagCard({
               exit="hidden"
               initial="hidden"
               variants={checkmarkVariants}
-              transition={getAnimationTransition(settings, 0.18)}
+              transition={getAnimationTransition(0.18)}
             >
               ✓
             </motion.span>
@@ -119,7 +117,7 @@ export function FlagCard({
                 exit="hidden"
                 initial="hidden"
                 variants={hintVariants}
-                transition={getAnimationTransition(settings, 0.24)}
+                transition={getAnimationTransition(0.24)}
               >
                 Hint: {hint}
               </motion.p>
@@ -131,7 +129,7 @@ export function FlagCard({
               className="mt-2 font-mono text-base text-fcc-danger"
               initial="hidden"
               variants={hintVariants}
-              transition={getAnimationTransition(settings, 0.24)}
+              transition={getAnimationTransition(0.24)}
             >
               Not quite. Use the hint and try another country.
             </motion.p>

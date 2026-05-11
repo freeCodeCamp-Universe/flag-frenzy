@@ -3,16 +3,20 @@ import { useNavigate } from 'react-router';
 
 import { MotionButton } from './MotionButton';
 
+interface HomeScreenProps {
+  nextLevelNumber: number;
+}
+
 const screenTransition = {
   duration: 0.36,
   ease: 'easeOut',
 } as const;
 
-export function HomeScreen() {
+export function HomeScreen({ nextLevelNumber }: HomeScreenProps) {
   const navigate = useNavigate();
 
   function startLevel() {
-    void navigate('/play?level=1');
+    void navigate(`/play?level=${String(nextLevelNumber)}`);
   }
 
   function openLevelSelect() {
@@ -27,7 +31,6 @@ export function HomeScreen() {
       transition={screenTransition}
     >
       <section className="relative w-full overflow-hidden rounded border border-fcc-border bg-fcc-panel">
-        <div className="flag-rush absolute inset-x-0 top-0 h-3" aria-hidden="true" />
         <div className="relative p-5 pt-8 text-center sm:p-7 sm:pt-10">
           <h1 className="mt-3 text-5xl font-bold leading-tight text-fcc-foreground sm:text-6xl">
             Flag Frenzy
@@ -48,18 +51,6 @@ export function HomeScreen() {
             <MotionButton intent="secondary" onClick={openLevelSelect}>
               Level Select
             </MotionButton>
-          </div>
-
-          <div
-            aria-hidden="true"
-            className="mt-8 grid h-24 grid-cols-6 overflow-hidden rounded border border-fcc-border"
-          >
-            <span className="bg-flag-red" />
-            <span className="bg-flag-white" />
-            <span className="bg-flag-blue" />
-            <span className="bg-flag-yellow" />
-            <span className="bg-flag-green" />
-            <span className="bg-flag-red" />
           </div>
         </div>
       </section>

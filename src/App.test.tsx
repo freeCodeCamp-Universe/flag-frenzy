@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 import { createMemoryStorage } from './test/createMemoryStorage';
+import { progressStorageKey } from './utils/progressStorage';
 
 describe('App', () => {
   beforeEach(() => {
@@ -18,30 +19,14 @@ describe('App', () => {
     expect(screen.getByText('Match flags to countries quickly')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Level Select' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Accessibility' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Accessibility' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Levels' })).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Level 1 unlocked' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('status: idle')).not.toBeInTheDocument();
-  });
-
-  it('updates accessibility settings', async () => {
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await user.click(screen.getByRole('button', { name: 'Accessibility' }));
-
-    await user.selectOptions(screen.getByLabelText('Font size'), 'large');
-    await user.selectOptions(screen.getByLabelText('Animations'), 'slow');
-
-    expect(document.documentElement.style.fontSize).toBe('20px');
-    expect(screen.getByLabelText('Font size')).toHaveValue('large');
-    expect(screen.getByLabelText('Animations')).toHaveValue('slow');
-    expect(
-      screen.queryByRole('checkbox', { name: 'Flag outlines' }),
-    ).not.toBeInTheDocument();
   });
 
   it('opens level select and renders locked and unlocked states', async () => {
@@ -94,6 +79,29 @@ describe('App', () => {
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+  });
+
+  it('starts the next uncompleted level from saved progress', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(
+      progressStorageKey,
+      JSON.stringify({
+        completedLevelIds: ['level-01'],
+        highScores: {
+          'level-01': 400,
+        },
+        highestUnlockedLevel: 2,
+        version: 1,
+      }),
+    );
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'United States' })).toBeInTheDocument();
   });
 
   it('keeps incorrect matches retryable and reveals a hint', async () => {

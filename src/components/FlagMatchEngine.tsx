@@ -11,12 +11,7 @@ import {
   validateMatches,
 } from '../engine/matching';
 import { calculateLevelScore } from '../engine/scoring';
-import type {
-  AccessibilitySettings,
-  GameLevel,
-  MatchAttempt,
-  PlayerMatches,
-} from '../game/types';
+import type { GameLevel, MatchAttempt, PlayerMatches } from '../game/types';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation';
 import { CountryBank } from './gameplay/CountryBank';
@@ -24,7 +19,6 @@ import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
 
 interface FlagMatchEngineProps {
-  accessibilitySettings: AccessibilitySettings;
   initialLevelIndex?: number;
   levels: GameLevel[];
   onLevelComplete?: (summary: LevelCompletionSummary) => void;
@@ -46,7 +40,6 @@ export interface LevelCompletionSummary {
 }
 
 export function FlagMatchEngine({
-  accessibilitySettings,
   initialLevelIndex = 0,
   levels,
   onLevelComplete,
@@ -195,7 +188,7 @@ export function FlagMatchEngine({
           exit="exit"
           initial="enter"
           key={level.id}
-          transition={getAnimationTransition(accessibilitySettings, 0.24)}
+          transition={getAnimationTransition(0.24)}
           variants={levelAdvanceVariants}
         >
           <div className="grid gap-3 sm:grid-cols-2">
@@ -217,7 +210,6 @@ export function FlagMatchEngine({
                   hint={hint}
                   isHintRevealed={isHintRevealed}
                   isLocked={locked}
-                  settings={accessibilitySettings}
                   onClick={() => {
                     handleFlagClick(flag.id);
                   }}
