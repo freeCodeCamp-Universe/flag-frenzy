@@ -30,7 +30,6 @@ export function LevelSelectScreen({ levels, unlockedCount }: LevelSelectScreenPr
     >
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
-          <p className="font-mono text-base text-fcc-muted">select stage</p>
           <h1 className="text-2xl font-bold">Levels</h1>
         </div>
         <p className="font-mono text-base text-fcc-success">{unlockedCount} unlocked</p>
