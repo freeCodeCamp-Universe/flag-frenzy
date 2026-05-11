@@ -22,7 +22,7 @@ export function AccessibilitySettingsPanel({
           </h2>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 font-mono text-base">
             <span className="text-fcc-muted">Font size</span>
             <select
@@ -56,20 +56,6 @@ export function AccessibilitySettingsPanel({
               <option value="standard">Standard</option>
               <option value="slow">Slow</option>
             </select>
-          </label>
-
-          <label className="flex items-center gap-3 rounded border border-fcc-border bg-fcc-background px-3 py-2 font-mono text-base">
-            <input
-              checked={settings.useColorblindOutlines}
-              className="size-5 accent-fcc-cta"
-              onChange={(event) => {
-                onChange({
-                  useColorblindOutlines: event.currentTarget.checked,
-                });
-              }}
-              type="checkbox"
-            />
-            <span>Flag outlines</span>
           </label>
         </div>
       </div>

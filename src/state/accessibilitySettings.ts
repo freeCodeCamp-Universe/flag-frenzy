@@ -3,7 +3,6 @@ import type { AccessibilitySettings } from '../game/types';
 export const defaultAccessibilitySettings: AccessibilitySettings = {
   animationSpeed: 'standard',
   fontScale: 'standard',
-  useColorblindOutlines: false,
 };
 
 export const fontSizeByScale: Record<AccessibilitySettings['fontScale'], string> = {

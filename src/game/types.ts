@@ -8,7 +8,6 @@ export type FontScale = 'standard' | 'large' | 'extra-large';
 export interface AccessibilitySettings {
   animationSpeed: AnimationSpeed;
   fontScale: FontScale;
-  useColorblindOutlines: boolean;
 }
 
 export interface GameSession {

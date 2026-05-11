@@ -18,8 +18,7 @@ The core loop is simple:
 5. Unlock the next level and persist progress locally.
 
 The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style with
-accessible font scaling, optional slower animations, and colorblind-friendly
-flag outlines.
+accessible font scaling and optional slower animations.
 
 ## Flag Matching Logic
 

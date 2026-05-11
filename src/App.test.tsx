@@ -27,13 +27,13 @@ describe('App', () => {
 
     await user.selectOptions(screen.getByLabelText('Font size'), 'large');
     await user.selectOptions(screen.getByLabelText('Animations'), 'slow');
-    await user.click(screen.getByRole('checkbox', { name: 'Flag outlines' }));
 
     expect(document.documentElement.style.fontSize).toBe('20px');
     expect(screen.getByLabelText('Font size')).toHaveValue('large');
     expect(screen.getByLabelText('Animations')).toHaveValue('slow');
-    expect(screen.getByRole('checkbox', { name: 'Flag outlines' })).toBeChecked();
-    expect(screen.getAllByText('outlined flag target')).toHaveLength(4);
+    expect(
+      screen.queryByRole('checkbox', { name: 'Flag outlines' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders thirty levels with locked and unlocked states', () => {

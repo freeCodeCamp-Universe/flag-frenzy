@@ -72,21 +72,10 @@ export function FlagCard({
       >
         <img
           alt={flag.alt}
-          className={[
-            'h-40 w-full rounded border bg-fcc-background object-contain p-2 sm:h-44',
-            settings.useColorblindOutlines
-              ? 'border-4 border-dashed border-fcc-highlight'
-              : 'border-fcc-border',
-          ].join(' ')}
+          className="h-40 w-full rounded border border-fcc-border bg-fcc-background object-contain p-2 sm:h-44"
           src={flag.src}
         />
       </button>
-
-      {settings.useColorblindOutlines ? (
-        <p className="mt-2 font-mono text-base text-fcc-highlight">
-          outlined flag target
-        </p>
-      ) : null}
 
       <div className="mt-3 flex min-h-8 items-center justify-between gap-3 font-mono">
         <span className="text-base text-fcc-muted">
