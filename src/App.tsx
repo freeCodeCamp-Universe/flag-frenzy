@@ -18,6 +18,10 @@ import { useProgression } from './hooks/useProgression';
 import { campaignLevels } from './levels/campaign';
 import { createHomeLevels } from './levels/homeLevels';
 
+interface LevelResultSummary extends LevelCompletionSummary {
+  retryCount: number;
+}
+
 export function App() {
   return (
     <BrowserRouter>
@@ -29,7 +33,10 @@ export function App() {
 function FlagFrenzyRoutes() {
   const { completeLevel, progress } = useProgression();
   const navigate = useNavigate();
-  const [levelSummary, setLevelSummary] = useState<LevelCompletionSummary>();
+  const [levelSummary, setLevelSummary] = useState<LevelResultSummary>();
+  const [retryCountsByLevelId, setRetryCountsByLevelId] = useState<
+    Record<string, number>
+  >({});
   const levels = createHomeLevels({
     highScores: progress.highScores,
     unlockedThrough: progress.highestUnlockedLevel,
@@ -39,9 +46,24 @@ function FlagFrenzyRoutes() {
   function handleLevelComplete(summary: LevelCompletionSummary) {
     if (summary.isPassed) {
       completeLevel(summary.level, summary.levelNumber, summary.score.totalScore);
+      setLevelSummary({
+        ...summary,
+        retryCount: retryCountsByLevelId[summary.level.id] ?? 0,
+      });
+      void navigate('/summary');
+      return;
     }
 
-    setLevelSummary(summary);
+    const retryCount = (retryCountsByLevelId[summary.level.id] ?? 0) + 1;
+
+    setRetryCountsByLevelId((currentCounts) => ({
+      ...currentCounts,
+      [summary.level.id]: retryCount,
+    }));
+    setLevelSummary({
+      ...summary,
+      retryCount,
+    });
     void navigate('/summary');
   }
 
@@ -89,6 +111,7 @@ function FlagFrenzyRoutes() {
                   isFinalLevel={levelSummary.isFinalLevel}
                   isPassed={levelSummary.isPassed}
                   onNextLevel={handleNextLevel}
+                  retryCount={levelSummary.retryCount}
                   score={levelSummary.score}
                 />
               )

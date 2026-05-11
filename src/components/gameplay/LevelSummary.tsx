@@ -9,6 +9,7 @@ interface LevelSummaryProps {
   isFinalLevel: boolean;
   isPassed: boolean;
   onNextLevel: () => void;
+  retryCount: number;
   score: LevelScoreBreakdown;
 }
 
@@ -18,6 +19,7 @@ export function LevelSummary({
   isFinalLevel,
   isPassed,
   onNextLevel,
+  retryCount,
   score,
 }: LevelSummaryProps) {
   return (
@@ -60,7 +62,8 @@ export function LevelSummary({
         <SummaryStat label="Speed" value={score.speedBonus} />
         <SummaryStat label="Penalty" value={-score.incorrectPenalty} />
         <SummaryStat label="Time" value={`${String(elapsedSeconds)}s`} />
-        <SummaryStat label="Retries" value={incorrectAttempts} />
+        <SummaryStat label="Wrong guesses" value={incorrectAttempts} />
+        <SummaryStat label="Retries" value={retryCount} />
       </dl>
 
       <motion.button

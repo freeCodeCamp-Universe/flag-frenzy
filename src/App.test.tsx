@@ -200,6 +200,24 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('time expired')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry Level' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Retries: 1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Wrong guesses: 0')).toBeInTheDocument();
+    expect(localStorage.getItem('flag-frenzy:progress:v1')).not.toContain('level-01');
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry Level' }));
+    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(45_000);
+    });
+
+    vi.useRealTimers();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Level Summary' }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Retries: 2')).toBeInTheDocument();
     expect(localStorage.getItem('flag-frenzy:progress:v1')).not.toContain('level-01');
 
     fireEvent.click(screen.getByRole('link', { name: 'flag-frenzy' }));
