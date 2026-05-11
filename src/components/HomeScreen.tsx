@@ -1,24 +1,28 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router';
 
-import { LevelGrid } from './LevelGrid';
 import { MotionButton } from './MotionButton';
-import type { HomeLevel } from '../game/types';
-
-interface HomeScreenProps {
-  levels: HomeLevel[];
-  unlockedCount: number;
-}
 
 const screenTransition = {
   duration: 0.36,
   ease: 'easeOut',
 } as const;
 
-export function HomeScreen({ levels, unlockedCount }: HomeScreenProps) {
+export function HomeScreen() {
+  const navigate = useNavigate();
+
+  function startLevel() {
+    void navigate('/play?level=1');
+  }
+
+  function openLevelSelect() {
+    void navigate('/levels');
+  }
+
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
-      className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(25rem,1.08fr)] lg:items-start"
+      className="mx-auto w-full max-w-3xl"
       initial={{ opacity: 0, y: 18 }}
       transition={screenTransition}
     >
@@ -36,8 +40,17 @@ export function HomeScreen({ levels, unlockedCount }: HomeScreenProps) {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 xs:flex-row">
-            <MotionButton intent="primary">Start</MotionButton>
-            <MotionButton intent="secondary">Level Select</MotionButton>
+            <MotionButton
+              intent="primary"
+              onClick={() => {
+                startLevel();
+              }}
+            >
+              Start
+            </MotionButton>
+            <MotionButton intent="secondary" onClick={openLevelSelect}>
+              Level Select
+            </MotionButton>
           </div>
 
           <div
@@ -52,19 +65,6 @@ export function HomeScreen({ levels, unlockedCount }: HomeScreenProps) {
             <span className="bg-flag-red" />
           </div>
         </div>
-      </section>
-
-      <section className="rounded border border-fcc-border bg-fcc-surface p-4 sm:p-5">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="font-mono text-base text-fcc-muted">select stage</p>
-            <h2 className="text-2xl font-bold">Levels</h2>
-          </div>
-          <p className="font-mono text-base text-fcc-success">
-            {unlockedCount} unlocked
-          </p>
-        </div>
-        <LevelGrid levels={levels} />
       </section>
     </motion.section>
   );

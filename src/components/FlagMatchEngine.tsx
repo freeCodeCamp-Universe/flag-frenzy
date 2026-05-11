@@ -22,17 +22,27 @@ import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
-import { LevelSummary } from './gameplay/LevelSummary';
 
 interface FlagMatchEngineProps {
   accessibilitySettings: AccessibilitySettings;
   initialLevelIndex?: number;
   levels: GameLevel[];
-  onLevelComplete?: (level: GameLevel, levelNumber: number, score: number) => void;
+  onLevelComplete?: (summary: LevelCompletionSummary) => void;
 }
 
 export interface AttemptState extends MatchAttempt {
   attemptId: number;
+}
+
+export interface LevelCompletionSummary {
+  elapsedSeconds: number;
+  hintsUsed: number;
+  incorrectAttempts: number;
+  isFinalLevel: boolean;
+  level: GameLevel;
+  levelIndex: number;
+  levelNumber: number;
+  score: ReturnType<typeof calculateLevelScore>;
 }
 
 export function FlagMatchEngine({
@@ -41,7 +51,7 @@ export function FlagMatchEngine({
   levels,
   onLevelComplete,
 }: FlagMatchEngineProps) {
-  const [levelIndex, setLevelIndex] = useState(initialLevelIndex);
+  const levelIndex = initialLevelIndex;
   const [selectedCountryId, setSelectedCountryId] = useState<string | undefined>();
   const [playerMatches, setPlayerMatches] = useState<PlayerMatches>({});
   const [attempts, setAttempts] = useState<Record<string, AttemptState>>({});
@@ -95,18 +105,27 @@ export function FlagMatchEngine({
     }
 
     completedLevelIdRef.current = level.id;
-    onLevelComplete?.(level, levelIndex + 1, score.totalScore);
-  }, [level, levelIndex, onLevelComplete, score.totalScore, validation.isPerfect]);
-
-  function resetBoard() {
-    setSelectedCountryId(undefined);
-    setPlayerMatches({});
-    setAttempts({});
-    setElapsedSeconds(0);
-    setIncorrectAttemptCount(0);
-    setRevealedHintFlagIds(new Set());
-    completedLevelIdRef.current = undefined;
-  }
+    onLevelComplete?.({
+      elapsedSeconds,
+      hintsUsed: revealedHintFlagIds.size,
+      incorrectAttempts: incorrectAttemptCount,
+      isFinalLevel,
+      level,
+      levelIndex,
+      levelNumber: levelIndex + 1,
+      score,
+    });
+  }, [
+    elapsedSeconds,
+    incorrectAttemptCount,
+    isFinalLevel,
+    level,
+    levelIndex,
+    onLevelComplete,
+    revealedHintFlagIds.size,
+    score,
+    validation.isPerfect,
+  ]);
 
   function submitMatch(flagId: string, countryId: string) {
     if (isMatchLocked(level, playerMatches, flagId)) {
@@ -147,16 +166,6 @@ export function FlagMatchEngine({
     if (countryId.length > 0) {
       submitMatch(flagId, countryId);
     }
-  }
-
-  function handleNextLevel() {
-    if (isFinalLevel) {
-      resetBoard();
-      return;
-    }
-
-    setLevelIndex((currentIndex) => currentIndex + 1);
-    resetBoard();
   }
 
   function revealHint(flagId: string) {
@@ -231,20 +240,6 @@ export function FlagMatchEngine({
             onSelect={setSelectedCountryId}
           />
         </motion.div>
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {validation.isPerfect ? (
-          <LevelSummary
-            elapsedSeconds={elapsedSeconds}
-            hintsUsed={revealedHintFlagIds.size}
-            incorrectAttempts={incorrectAttemptCount}
-            isFinalLevel={isFinalLevel}
-            onNextLevel={handleNextLevel}
-            score={score}
-            settings={accessibilitySettings}
-          />
-        ) : null}
       </AnimatePresence>
     </section>
   );

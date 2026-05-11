@@ -4,6 +4,7 @@ import type { HomeLevel } from '../game/types';
 
 interface LevelGridProps {
   levels: HomeLevel[];
+  onSelectLevel: (levelNumber: number) => void;
 }
 
 const levelTransition = {
@@ -11,11 +12,11 @@ const levelTransition = {
   ease: 'easeOut',
 } as const;
 
-export function LevelGrid({ levels }: LevelGridProps) {
+export function LevelGrid({ levels, onSelectLevel }: LevelGridProps) {
   return (
     <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
       {levels.map((level) => (
-        <LevelTile key={level.id} level={level} />
+        <LevelTile key={level.id} level={level} onSelectLevel={onSelectLevel} />
       ))}
     </div>
   );
@@ -23,9 +24,10 @@ export function LevelGrid({ levels }: LevelGridProps) {
 
 interface LevelTileProps {
   level: HomeLevel;
+  onSelectLevel: (levelNumber: number) => void;
 }
 
-function LevelTile({ level }: LevelTileProps) {
+function LevelTile({ level, onSelectLevel }: LevelTileProps) {
   const isLocked = level.status === 'locked';
   const isUnlocking = level.status === 'unlocking';
 
@@ -50,6 +52,9 @@ function LevelTile({ level }: LevelTileProps) {
       ].join(' ')}
       disabled={isLocked}
       initial={isUnlocking ? { opacity: 0.45, rotate: -4, scale: 0.86 } : false}
+      onClick={() => {
+        onSelectLevel(level.number);
+      }}
       transition={isUnlocking ? { duration: 0.52, ease: 'easeOut' } : levelTransition}
       type="button"
       whileHover={isLocked ? undefined : { y: -4, scale: 1.04 }}
