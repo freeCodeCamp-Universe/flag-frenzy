@@ -24,14 +24,11 @@ export function CountryBank({
         <h3 id="countries-title" className="font-mono text-xl font-bold">
           Countries
         </h3>
-        <p className="mt-1 font-mono text-base text-fcc-muted">
-          Click, press Enter, or drag
-        </p>
-        <p aria-live="polite" className="mt-2 font-mono text-base text-fcc-highlight">
-          {selectedCountryName === undefined
-            ? 'No country selected'
-            : `${selectedCountryName} selected`}
-        </p>
+        {selectedCountryName === undefined ? null : (
+          <p aria-live="polite" className="mt-2 font-mono text-base text-fcc-highlight">
+            Now choose the matching flag for {selectedCountryName}.
+          </p>
+        )}
       </div>
 
       <ul className="mt-3 grid gap-2" aria-live="polite">

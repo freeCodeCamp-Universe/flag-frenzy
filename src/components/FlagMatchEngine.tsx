@@ -26,6 +26,7 @@ import { GameplayHud } from './gameplay/GameplayHud';
 const maxActiveFlags = 4;
 const minCountryOptions = 8;
 const maxCountryOptions = 10;
+const tutorialStorageKey = 'flag-frenzy:tutorial-complete:v1';
 
 interface AttemptConfig {
   countryOptionIds: string[];
@@ -67,6 +68,7 @@ export function FlagMatchEngine({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [incorrectAttemptCount, setIncorrectAttemptCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [attemptConfig, setAttemptConfig] = useState<AttemptConfig>();
   const completedLevelIdRef = useRef<string | undefined>(undefined);
   const playAudioFeedback = useAudioFeedback();
@@ -133,7 +135,13 @@ export function FlagMatchEngine({
   }, [level, levels]);
 
   useEffect(() => {
-    if (playableLevel === undefined || isLevelEnded || isPaused) {
+    if (window.localStorage.getItem(tutorialStorageKey) !== 'true') {
+      setIsTutorialOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (playableLevel === undefined || isLevelEnded || isPaused || isTutorialOpen) {
       return undefined;
     }
 
@@ -144,7 +152,7 @@ export function FlagMatchEngine({
     return () => {
       window.clearInterval(timerId);
     };
-  }, [isLevelEnded, isPaused, playableLevel]);
+  }, [isLevelEnded, isPaused, isTutorialOpen, playableLevel]);
 
   useEffect(() => {
     if (validation.isPerfect) {
@@ -240,6 +248,11 @@ export function FlagMatchEngine({
     setIsPaused(false);
   }
 
+  function dismissTutorial() {
+    window.localStorage.setItem(tutorialStorageKey, 'true');
+    setIsTutorialOpen(false);
+  }
+
   return (
     <section
       aria-labelledby="flag-engine-title"
@@ -257,6 +270,12 @@ export function FlagMatchEngine({
         timeLimitSeconds={playableLevel?.timeLimitSeconds ?? level.timeLimitSeconds}
         totalLevels={levels.length}
         validation={validation}
+      />
+
+      <ShowInstructionsButton
+        onShowTutorial={() => {
+          setIsTutorialOpen(true);
+        }}
       />
 
       <AnimatePresence mode="wait">
@@ -321,7 +340,83 @@ export function FlagMatchEngine({
       <AnimatePresence>
         {isPaused ? <PauseModal onQuit={onQuit} onResume={resumeGame} /> : null}
       </AnimatePresence>
+      <AnimatePresence>
+        {isTutorialOpen ? <TutorialModal onDismiss={dismissTutorial} /> : null}
+      </AnimatePresence>
     </section>
+  );
+}
+
+interface ShowInstructionsButtonProps {
+  onShowTutorial: () => void;
+}
+
+function ShowInstructionsButton({ onShowTutorial }: ShowInstructionsButtonProps) {
+  return (
+    <div className="mt-4 flex justify-start">
+      <button
+        className="rounded border border-fcc-highlight px-3 py-2 font-mono text-base font-bold text-fcc-highlight outline-none transition hover:bg-fcc-panel focus-visible:ring-2 focus-visible:ring-focus"
+        onClick={onShowTutorial}
+        type="button"
+      >
+        Show Instructions
+      </button>
+    </div>
+  );
+}
+
+interface TutorialModalProps {
+  onDismiss: () => void;
+}
+
+function TutorialModal({ onDismiss }: TutorialModalProps) {
+  return (
+    <motion.div
+      animate={{ opacity: 1 }}
+      aria-labelledby="tutorial-title"
+      aria-modal="true"
+      className="fixed inset-0 z-30 grid place-items-center bg-fcc-background/85 px-4"
+      exit={{ opacity: 0 }}
+      initial={{ opacity: 0 }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          onDismiss();
+        }
+      }}
+      role="dialog"
+      transition={getAnimationTransition(0.18)}
+    >
+      <motion.div
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="w-full max-w-lg rounded border border-fcc-border bg-fcc-surface p-5"
+        exit={{ opacity: 0, scale: 0.98, y: 8 }}
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
+        transition={getAnimationTransition(0.2)}
+      >
+        <p className="font-mono text-base text-fcc-highlight">
+          Welcome to Flag Frenzy.
+        </p>
+        <h2 id="tutorial-title" className="mt-2 text-2xl font-bold">
+          How to Play
+        </h2>
+        <p className="mt-3 font-mono text-base text-fcc-muted">
+          Match country names to their flags.
+        </p>
+        <ol className="mt-4 list-decimal space-y-2 pl-5 font-mono text-base">
+          <li>Select a country from the Countries list.</li>
+          <li>Click the matching flag to make a match.</li>
+          <li>Or drag a country onto its matching flag.</li>
+          <li>Match all flags correctly to complete the level.</li>
+        </ol>
+        <button
+          className="mt-5 rounded bg-fcc-cta px-4 py-2 font-mono font-bold text-fcc-background outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-surface"
+          onClick={onDismiss}
+          type="button"
+        >
+          Got it
+        </button>
+      </motion.div>
+    </motion.div>
   );
 }
 

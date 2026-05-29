@@ -15,6 +15,8 @@ import { campaignLevels } from './levels/campaign';
 import { createMemoryStorage } from './test/createMemoryStorage';
 import { progressStorageKey } from './utils/progressStorage';
 
+const tutorialStorageKey = 'flag-frenzy:tutorial-complete:v1';
+
 describe('App', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createMemoryStorage());
@@ -118,7 +120,9 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
-    expect(screen.getByText(`${selectedCountryName} selected`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`Now choose the matching flag for ${selectedCountryName}.`),
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: selectedCountryName })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -137,6 +141,157 @@ describe('App', () => {
     expect(screen.queryByText('locked')).not.toBeInTheDocument();
     expect(screen.getAllByText(selectedCountryName).length).toBeGreaterThan(0);
     expect(countriesPanel.queryByText(selectedCountryName)).not.toBeInTheDocument();
+  });
+
+  it('keeps instructions behind the Show Instructions button during play', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Show Instructions' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'How to Play' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Select a country from the Countries list.'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Click, press Enter, or drag')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show Instructions' }));
+
+    expect(screen.getByRole('dialog', { name: 'How to Play' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Select a country from the Countries list.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Click the matching flag to make a match.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Or drag a country onto its matching flag.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Match all flags correctly to complete the level.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows and stores first-time tutorial dismissal', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'How to Play' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Welcome to Flag Frenzy.')).toBeInTheDocument();
+    expect(screen.getByText('Match country names to their flags.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Select a country from the Countries list.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Click the matching flag to make a match.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Or drag a country onto its matching flag.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Match all flags correctly to complete the level.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Got it' }));
+
+    expect(localStorage.getItem(tutorialStorageKey)).toBe('true');
+    await waitForElementToBeRemoved(() =>
+      screen.queryByRole('dialog', { name: 'How to Play' }),
+    );
+  });
+
+  it('pauses the timer while the tutorial is open', () => {
+    vi.useFakeTimers();
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(screen.getByRole('dialog', { name: 'How to Play' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Timer: 45s')).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+
+    expect(screen.getByLabelText('Timer: 45s')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
+
+    act(() => {
+      vi.advanceTimersByTime(1_000);
+    });
+
+    expect(screen.getByLabelText('Timer: 44s')).toBeInTheDocument();
+  });
+
+  it('does not automatically show the tutorial for returning users', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(
+      screen.queryByRole('dialog', { name: 'How to Play' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('reopens the tutorial from Show Instructions', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    await user.click(screen.getByRole('button', { name: 'Show Instructions' }));
+
+    expect(screen.getByRole('dialog', { name: 'How to Play' })).toBeInTheDocument();
+  });
+
+  it('shows selected-country guidance only after a country is selected', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    expect(
+      screen.queryByText('Select a country from the list to begin.'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Select a country, then choose its matching flag.'),
+    ).not.toBeInTheDocument();
+
+    const selectedCountryName = getActiveFlagNames()[0];
+
+    if (selectedCountryName === undefined) {
+      throw new Error('Expected at least one active flag.');
+    }
+
+    await user.click(screen.getByRole('button', { name: selectedCountryName }));
+
+    expect(
+      screen.getByText(`Now choose the matching flag for ${selectedCountryName}.`),
+    ).toBeInTheDocument();
   });
 
   it('fills small levels with global distractor countries', () => {
@@ -269,6 +424,7 @@ describe('App', () => {
   });
 
   it('shows summary on timeout without unlocking the next level', async () => {
+    localStorage.setItem(tutorialStorageKey, 'true');
     vi.useFakeTimers();
 
     render(<App />);
