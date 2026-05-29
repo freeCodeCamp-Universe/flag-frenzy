@@ -16,6 +16,7 @@ interface FlagCardProps {
   isLocked: boolean;
   onClick: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
+  revealedCountryName?: string;
   selectedCountryName?: string;
 }
 
@@ -26,6 +27,7 @@ export function FlagCard({
   isLocked,
   onClick,
   onDrop,
+  revealedCountryName,
   selectedCountryName,
 }: FlagCardProps) {
   const isCorrect = feedback === 'correct';
@@ -71,7 +73,7 @@ export function FlagCard({
       <div className="mt-3 flex min-h-8 items-center justify-between gap-3 font-mono">
         <span className="text-base text-fcc-muted">
           {isLocked
-            ? 'locked'
+            ? (revealedCountryName ?? '')
             : selectedCountryName === undefined
               ? feedback === 'pending'
                 ? ''

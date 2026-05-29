@@ -68,6 +68,18 @@ export function FlagMatchEngine({
     () => createCountryOptions(level, levels),
     [level, levels],
   );
+  const countriesById = useMemo(
+    () => new Map(countryOptions.map((country) => [country.id, country])),
+    [countryOptions],
+  );
+  const matchedCountryIds = useMemo(
+    () => new Set(Object.values(playerMatches)),
+    [playerMatches],
+  );
+  const availableCountries = useMemo(
+    () => countryOptions.filter((country) => !matchedCountryIds.has(country.id)),
+    [countryOptions, matchedCountryIds],
+  );
   const selectedCountryName = countryOptions.find(
     (country) => country.id === selectedCountryId,
   )?.name;
@@ -237,6 +249,11 @@ export function FlagMatchEngine({
                   onDrop={(event) => {
                     handleDrop(event, flag.id);
                   }}
+                  revealedCountryName={
+                    locked
+                      ? countriesById.get(level.correctMatches[flag.id] ?? '')?.name
+                      : undefined
+                  }
                   selectedCountryName={selectedCountryName}
                 />
               );
@@ -244,7 +261,7 @@ export function FlagMatchEngine({
           </div>
 
           <CountryBank
-            countries={countryOptions}
+            countries={availableCountries}
             selectedCountryId={selectedCountryId}
             selectedCountryName={selectedCountryName}
             onSelect={setSelectedCountryId}

@@ -93,6 +93,18 @@ describe('App', () => {
 
     expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
     expect(screen.getByText('Timer')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Countries' })).toBeInTheDocument();
+    const countriesPanel = within(
+      screen.getByRole('complementary', { name: 'Countries' }),
+    );
+    const countryButtons = countriesPanel.getAllByRole('button');
+    const levelOneCountryNames = new Set(['Canada', 'Japan', 'Brazil', 'France']);
+
+    expect(countriesPanel.getByText('Canada')).toBeInTheDocument();
+    expect(countryButtons.length).toBeGreaterThan(levelOneCountryNames.size);
+    expect(
+      countryButtons.some((button) => !levelOneCountryNames.has(button.textContent)),
+    ).toBe(true);
 
     await user.click(screen.getByRole('button', { name: 'Canada' }));
 
@@ -108,6 +120,9 @@ describe('App', () => {
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+    expect(screen.queryByText('locked')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Canada').length).toBeGreaterThan(0);
+    expect(countriesPanel.queryByText('Canada')).not.toBeInTheDocument();
   });
 
   it('shuffles in extra wrong country options on the game board', async () => {
@@ -118,7 +133,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
     const countryButtons = within(
-      screen.getByLabelText('Country options'),
+      screen.getByRole('complementary', { name: 'Countries' }),
     ).getAllByRole('button');
     const levelOneCountryNames = new Set(['Canada', 'Japan', 'Brazil', 'France']);
 
@@ -189,6 +204,11 @@ describe('App', () => {
 
     expect(screen.getByText('incorrect')).toBeInTheDocument();
     expect(screen.getByText('Not quite. Try another country.')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
+        'Canada',
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Hint' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeEnabled();
@@ -225,6 +245,11 @@ describe('App', () => {
     vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: 'Retry Level' }));
     expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
+        'Canada',
+      ),
+    ).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(45_000);
@@ -290,6 +315,11 @@ describe('App', () => {
     expect(await screen.findByText('level 2/30 / timed')).toBeInTheDocument();
     expect(
       await screen.findByRole('button', { name: 'United States' }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
+        'United States',
+      ),
     ).toBeInTheDocument();
 
     await user.click(screen.getByRole('link', { name: 'flag-frenzy' }));
