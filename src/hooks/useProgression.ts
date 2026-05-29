@@ -5,21 +5,21 @@ import type { GameLevel, GameProgress } from '../game/types';
 import { loadProgress, saveProgress } from '../utils/progressStorage';
 
 export function useProgression() {
-  const [progress, setProgress] = useState<GameProgress>(() => {
-    if (typeof window === 'undefined') {
-      return createDefaultProgress();
-    }
-
-    return loadProgress();
-  });
+  const [progress, setProgress] = useState<GameProgress>(() => createDefaultProgress());
+  const [hasLoadedProgress, setHasLoadedProgress] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    setProgress(loadProgress());
+    setHasLoadedProgress(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedProgress) {
       return;
     }
 
     saveProgress(progress);
-  }, [progress]);
+  }, [hasLoadedProgress, progress]);
 
   function completeLevel(level: GameLevel, levelNumber: number, score: number) {
     setProgress((currentProgress) =>

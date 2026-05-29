@@ -60,7 +60,10 @@ export function FlagMatchEngine({
   const completedLevelIdRef = useRef<string | undefined>(undefined);
   const playAudioFeedback = useAudioFeedback();
   const level = getPlayableLevel(levels, levelIndex);
-  const boardFlags = useMemo(() => shuffleItems(level.flags), [level]);
+  const boardFlags = useMemo(
+    () => shuffleItems(level.flags, `${level.id}:flags`),
+    [level],
+  );
   const countryOptions = useMemo(
     () => createCountryOptions(level, levels),
     [level, levels],
@@ -321,7 +324,7 @@ function createCountryOptions(level: GameLevel, levels: GameLevel[]): CountryOpt
   const correctCountryIds = new Set(Object.values(level.correctMatches));
   const distractors = getDistractorCountries(levels, correctCountryIds, 3);
 
-  return shuffleItems([...level.countries, ...distractors]);
+  return shuffleItems([...level.countries, ...distractors], `${level.id}:countries`);
 }
 
 function getDistractorCountries(
@@ -339,14 +342,18 @@ function getDistractorCountries(
     }
   }
 
-  return shuffleItems([...distractors.values()]).slice(0, count);
+  return shuffleItems([...distractors.values()], 'campaign:distractors').slice(
+    0,
+    count,
+  );
 }
 
-function shuffleItems<T>(items: readonly T[]): T[] {
+function shuffleItems<T>(items: readonly T[], seed: string): T[] {
   const shuffledItems = [...items];
+  const nextRandom = createSeededRandom(seed);
 
   for (let index = shuffledItems.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const swapIndex = Math.floor(nextRandom() * (index + 1));
     const currentItem = shuffledItems[index];
     const swapItem = shuffledItems[swapIndex];
 
@@ -357,4 +364,22 @@ function shuffleItems<T>(items: readonly T[]): T[] {
   }
 
   return shuffledItems;
+}
+
+function createSeededRandom(seed: string) {
+  let state = 0x811c9dc5;
+
+  for (const character of seed) {
+    state ^= character.charCodeAt(0);
+    state = Math.imul(state, 0x01000193);
+  }
+
+  return () => {
+    state += 0x6d2b79f5;
+    let nextState = state;
+    nextState = Math.imul(nextState ^ (nextState >>> 15), nextState | 1);
+    nextState ^= nextState + Math.imul(nextState ^ (nextState >>> 7), nextState | 61);
+
+    return ((nextState ^ (nextState >>> 14)) >>> 0) / 4294967296;
+  };
 }
