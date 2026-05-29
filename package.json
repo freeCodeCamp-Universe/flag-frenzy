@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "serve out -l tcp://127.0.0.1:3000",
     "test": "vitest",
     "test:run": "vitest --run",
     "typecheck": "tsc --noEmit",
@@ -38,6 +38,7 @@
     "jsdom": "^29.1.1",
     "postcss": "^8.4.0",
     "prettier": "^3.0.0",
+    "serve": "^14.2.6",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
