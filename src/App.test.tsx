@@ -121,8 +121,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
     expect(
-      screen.getByText(`Now choose the matching flag for ${selectedCountryName}.`),
+      screen.getByText(`Now select the flag that matches ${selectedCountryName}.`),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/ready:/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: selectedCountryName })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -141,6 +142,11 @@ describe('App', () => {
     expect(screen.queryByText('locked')).not.toBeInTheDocument();
     expect(screen.getAllByText(selectedCountryName).length).toBeGreaterThan(0);
     expect(countriesPanel.queryByText(selectedCountryName)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Choose a country from the list, then select its matching flag.',
+      ),
+    ).toBeInTheDocument();
   });
 
   it('keeps instructions behind the Show Instructions button during play', async () => {
@@ -265,7 +271,7 @@ describe('App', () => {
     expect(screen.getByRole('dialog', { name: 'How to Play' })).toBeInTheDocument();
   });
 
-  it('shows selected-country guidance only after a country is selected', async () => {
+  it('updates selected-country guidance as countries are selected', async () => {
     const user = userEvent.setup();
 
     localStorage.setItem(tutorialStorageKey, 'true');
@@ -275,23 +281,33 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(
-      screen.queryByText('Select a country from the list to begin.'),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Select a country, then choose its matching flag.'),
-    ).not.toBeInTheDocument();
+      screen.getByText(
+        'Choose a country from the list, then select its matching flag.',
+      ),
+    ).toBeInTheDocument();
 
     const selectedCountryName = getActiveFlagNames()[0];
+    const secondCountryName = getActiveFlagNames()[1];
 
-    if (selectedCountryName === undefined) {
-      throw new Error('Expected at least one active flag.');
+    if (selectedCountryName === undefined || secondCountryName === undefined) {
+      throw new Error('Expected at least two active flags.');
     }
 
     await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
     expect(
-      screen.getByText(`Now choose the matching flag for ${selectedCountryName}.`),
+      screen.getByText(`Now select the flag that matches ${selectedCountryName}.`),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/ready:/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: secondCountryName }));
+
+    expect(
+      screen.getByText(`Now select the flag that matches ${secondCountryName}.`),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(`Now select the flag that matches ${selectedCountryName}.`),
+    ).not.toBeInTheDocument();
   });
 
   it('fills small levels with global distractor countries', () => {

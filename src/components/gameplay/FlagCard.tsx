@@ -78,7 +78,7 @@ export function FlagCard({
               ? feedback === 'pending'
                 ? ''
                 : feedback
-              : `ready: ${selectedCountryName}`}
+              : ''}
         </span>
         <AnimatePresence>
           {isCorrect ? (
