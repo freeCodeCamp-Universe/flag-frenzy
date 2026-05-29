@@ -289,6 +289,25 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
   });
 
+  it('completes level two after the first four active flags', async () => {
+    const user = userEvent.setup();
+
+    window.history.pushState({}, '', '/play?level=2');
+
+    render(<App />);
+
+    expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
+    expect(getActiveFlagButtons()).toHaveLength(4);
+
+    await completeActiveFlags(user);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Level Summary' }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem('flag-frenzy:progress:v1')).toContain('level-02');
+    expect(screen.queryByLabelText('Correct: 0/1')).not.toBeInTheDocument();
+  });
+
   it('advances to the next level after a perfect round', async () => {
     const user = userEvent.setup();
 
@@ -328,6 +347,33 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Level 2 unlocked' })).toBeEnabled();
   });
 });
+
+function getActiveFlagButtons(): HTMLButtonElement[] {
+  return screen.getAllByRole<HTMLButtonElement>('button', {
+    name: /^Match Flag of /,
+  });
+}
+
+function getIncompleteFlagButtons(): HTMLButtonElement[] {
+  return getActiveFlagButtons().filter((button) => !button.disabled);
+}
+
+async function completeActiveFlags(user: ReturnType<typeof userEvent.setup>) {
+  const flagButtons = getIncompleteFlagButtons();
+
+  for (const flagButton of flagButtons) {
+    const countryName = flagButton
+      .getAttribute('aria-label')
+      ?.replace('Match Flag of ', '');
+
+    if (countryName === undefined) {
+      throw new Error('Active flag button is missing an accessible country name.');
+    }
+
+    await user.click(screen.getByRole('button', { name: countryName }));
+    await user.click(flagButton);
+  }
+}
 
 function createDataTransfer(): DataTransfer {
   const store = new Map<string, string>();

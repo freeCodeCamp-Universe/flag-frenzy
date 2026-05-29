@@ -4,6 +4,8 @@ import type { GameLevel, MatchValidationResult } from '../../game/types';
 import { statPulseVariants } from '../../utils/animation';
 
 interface GameplayHudProps {
+  activeCorrectCount: number;
+  activeTotalCount: number;
   currentLevel: number;
   elapsedSeconds: number;
   isComplete: boolean;
@@ -16,6 +18,8 @@ interface GameplayHudProps {
 }
 
 export function GameplayHud({
+  activeCorrectCount,
+  activeTotalCount,
   currentLevel,
   elapsedSeconds,
   isComplete,
@@ -46,9 +50,9 @@ export function GameplayHud({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <dl className="grid grid-cols-3 gap-2 font-mono text-base">
             <Stat
-              pulseKey={validation.correctCount}
+              pulseKey={activeCorrectCount}
               label="Correct"
-              value={`${String(validation.correctCount)}/${String(validation.totalCount)}`}
+              value={`${String(activeCorrectCount)}/${String(activeTotalCount)}`}
             />
             <Stat label="Score" pulseKey={score} value={String(score)} />
             <Stat
@@ -57,7 +61,7 @@ export function GameplayHud({
               value={
                 mode === 'timed'
                   ? `${String(remainingSeconds ?? 0)}s`
-                  : `${String(validation.totalCount * 125)} pts`
+                  : `${String(activeTotalCount * 125)} pts`
               }
             />
           </dl>

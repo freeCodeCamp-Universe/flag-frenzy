@@ -22,6 +22,8 @@ import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
 
+const maxActiveFlags = 4;
+
 interface FlagMatchEngineProps {
   initialLevelIndex?: number;
   levels: GameLevel[];
@@ -60,13 +62,14 @@ export function FlagMatchEngine({
   const completedLevelIdRef = useRef<string | undefined>(undefined);
   const playAudioFeedback = useAudioFeedback();
   const level = getPlayableLevel(levels, levelIndex);
+  const playableLevel = useMemo(() => createPlayableLevel(level), [level]);
   const boardFlags = useMemo(
-    () => shuffleItems(level.flags, `${level.id}:flags`),
-    [level],
+    () => shuffleItems(playableLevel.flags, `${playableLevel.id}:flags`),
+    [playableLevel],
   );
   const countryOptions = useMemo(
-    () => createCountryOptions(level, levels),
-    [level, levels],
+    () => createCountryOptions(playableLevel, levels),
+    [playableLevel, levels],
   );
   const countriesById = useMemo(
     () => new Map(countryOptions.map((country) => [country.id, country])),
@@ -84,20 +87,20 @@ export function FlagMatchEngine({
     (country) => country.id === selectedCountryId,
   )?.name;
   const validation = useMemo(
-    () => validateMatches(level, playerMatches),
-    [level, playerMatches],
+    () => validateMatches(playableLevel, playerMatches),
+    [playableLevel, playerMatches],
   );
   const score = calculateLevelScore({
     elapsedSeconds,
     incorrectAttempts: incorrectAttemptCount,
-    level,
+    level: playableLevel,
     validation,
   });
   const isFinalLevel = levelIndex >= levels.length - 1;
   const isTimeExpired =
-    level.mode === 'timed' &&
-    level.timeLimitSeconds !== undefined &&
-    elapsedSeconds >= level.timeLimitSeconds &&
+    playableLevel.mode === 'timed' &&
+    playableLevel.timeLimitSeconds !== undefined &&
+    elapsedSeconds >= playableLevel.timeLimitSeconds &&
     !validation.isPerfect;
   const isLevelEnded = validation.isPerfect || isTimeExpired;
 
@@ -122,17 +125,17 @@ export function FlagMatchEngine({
   }, [playAudioFeedback, validation.isPerfect]);
 
   useEffect(() => {
-    if (!isLevelEnded || completedLevelIdRef.current === level.id) {
+    if (!isLevelEnded || completedLevelIdRef.current === playableLevel.id) {
       return;
     }
 
-    completedLevelIdRef.current = level.id;
+    completedLevelIdRef.current = playableLevel.id;
     onLevelComplete?.({
       elapsedSeconds,
       incorrectAttempts: incorrectAttemptCount,
       isFinalLevel,
       isPassed: validation.isPerfect,
-      level,
+      level: playableLevel,
       levelIndex,
       levelNumber: levelIndex + 1,
       score,
@@ -142,19 +145,19 @@ export function FlagMatchEngine({
     incorrectAttemptCount,
     isFinalLevel,
     isLevelEnded,
-    level,
     levelIndex,
     onLevelComplete,
+    playableLevel,
     score,
     validation.isPerfect,
   ]);
 
   function submitMatch(flagId: string, countryId: string) {
-    if (isPaused || isMatchLocked(level, playerMatches, flagId)) {
+    if (isPaused || isMatchLocked(playableLevel, playerMatches, flagId)) {
       return;
     }
 
-    const attempt = createMatchAttempt(level, flagId, countryId);
+    const attempt = createMatchAttempt(playableLevel, flagId, countryId);
 
     setPlayerMatches((currentMatches) => applyMatchAttempt(currentMatches, attempt));
     setAttempts((currentAttempts) => ({
@@ -207,13 +210,15 @@ export function FlagMatchEngine({
       className="rounded border border-fcc-border bg-fcc-surface p-4 sm:p-5"
     >
       <GameplayHud
+        activeCorrectCount={validation.correctCount}
+        activeTotalCount={validation.totalCount}
         currentLevel={levelIndex + 1}
         elapsedSeconds={elapsedSeconds}
         isComplete={validation.isPerfect}
-        mode={level.mode}
+        mode={playableLevel.mode}
         onPause={pauseGame}
         score={score.totalScore}
-        timeLimitSeconds={level.timeLimitSeconds}
+        timeLimitSeconds={playableLevel.timeLimitSeconds}
         totalLevels={levels.length}
         validation={validation}
       />
@@ -224,16 +229,16 @@ export function FlagMatchEngine({
           className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]"
           exit="exit"
           initial="enter"
-          key={level.id}
+          key={playableLevel.id}
           transition={getAnimationTransition(0.24)}
           variants={levelAdvanceVariants}
         >
           <div className="grid gap-3 sm:grid-cols-2">
             {boardFlags.map((flag) => {
               const attempt = attempts[flag.id];
-              const locked = isMatchLocked(level, playerMatches, flag.id);
+              const locked = isMatchLocked(playableLevel, playerMatches, flag.id);
               const feedback = locked
-                ? getMatchFeedback(level, playerMatches, flag.id)
+                ? getMatchFeedback(playableLevel, playerMatches, flag.id)
                 : (attempt?.feedback ?? 'pending');
 
               return (
@@ -251,7 +256,8 @@ export function FlagMatchEngine({
                   }}
                   revealedCountryName={
                     locked
-                      ? countriesById.get(level.correctMatches[flag.id] ?? '')?.name
+                      ? countriesById.get(playableLevel.correctMatches[flag.id] ?? '')
+                          ?.name
                       : undefined
                   }
                   selectedCountryName={selectedCountryName}
@@ -337,11 +343,44 @@ function getPlayableLevel(levels: GameLevel[], index: number): GameLevel {
   return level;
 }
 
+function createPlayableLevel(level: GameLevel): GameLevel {
+  const flags = level.flags.slice(0, maxActiveFlags);
+  const flagIds = new Set(flags.map((flag) => flag.id));
+  const correctCountryIds = new Set(
+    flags.flatMap((flag) => {
+      const countryId = level.correctMatches[flag.id];
+
+      return countryId === undefined ? [] : [countryId];
+    }),
+  );
+  const countries = level.countries.filter((country) =>
+    correctCountryIds.has(country.id),
+  );
+  const correctMatches = Object.fromEntries(
+    Object.entries(level.correctMatches).filter(([flagId]) => flagIds.has(flagId)),
+  );
+
+  return {
+    ...level,
+    countries,
+    correctMatches,
+    flags,
+    optionCount: countries.length,
+    targetScore:
+      level.mode === 'score' && level.targetScore !== undefined
+        ? countries.length * 125
+        : undefined,
+  };
+}
+
 function createCountryOptions(level: GameLevel, levels: GameLevel[]): CountryOption[] {
   const correctCountryIds = new Set(Object.values(level.correctMatches));
   const distractors = getDistractorCountries(levels, correctCountryIds, 3);
 
-  return shuffleItems([...level.countries, ...distractors], `${level.id}:countries`);
+  return shuffleItems(
+    [...level.countries, ...distractors],
+    `${level.id}:${level.flags.map((flag) => flag.id).join(':')}:countries`,
+  );
 }
 
 function getDistractorCountries(
