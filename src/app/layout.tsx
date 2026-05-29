@@ -7,6 +7,16 @@ import { NextFlagFrenzyProvider } from './FlagFrenzyProvider';
 
 export const metadata: Metadata = {
   description: 'Match flags to countries quickly.',
+  icons: {
+    icon: [
+      {
+        sizes: '32x32',
+        type: 'image/png',
+        url: '/favicon-32x32.png',
+      },
+    ],
+    shortcut: '/favicon-32x32.png',
+  },
   title: 'Flag Frenzy',
 };
 
