@@ -146,16 +146,12 @@ describe('App', () => {
       'true',
     );
 
-    await user.click(
-      screen.getByRole('button', { name: `Match Flag of ${selectedCountryName}` }),
-    );
+    await user.click(getFlagButtonByCountryName(selectedCountryName));
 
     expect(screen.getByLabelText('correct')).toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: `Match Flag of ${selectedCountryName}` }),
-    ).toBeDisabled();
+    expect(getFlagButtonByCountryName(selectedCountryName)).toBeDisabled();
     expect(screen.queryByText('locked')).not.toBeInTheDocument();
     expect(screen.getAllByText(selectedCountryName).length).toBeGreaterThan(0);
     expect(countriesPanel.queryByText(selectedCountryName)).not.toBeInTheDocument();
@@ -428,9 +424,7 @@ describe('App', () => {
     }
 
     await user.click(screen.getByRole('button', { name: wrongCountryName }));
-    await user.click(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-    );
+    await user.click(getFlagButtonByCountryName(targetCountryName));
 
     expect(screen.getByText('incorrect')).toBeInTheDocument();
     expect(screen.getByText('Not quite. Try another country.')).toBeInTheDocument();
@@ -441,19 +435,13 @@ describe('App', () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Hint' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-    ).toBeEnabled();
+    expect(getFlagButtonByCountryName(targetCountryName)).toBeEnabled();
 
     await user.click(screen.getByRole('button', { name: targetCountryName }));
-    await user.click(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-    );
+    await user.click(getFlagButtonByCountryName(targetCountryName));
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-    ).toBeDisabled();
+    expect(getFlagButtonByCountryName(targetCountryName)).toBeDisabled();
   });
 
   it('shows summary on timeout without unlocking the next level', async () => {
@@ -523,17 +511,12 @@ describe('App', () => {
     fireEvent.dragStart(screen.getByRole('button', { name: targetCountryName }), {
       dataTransfer,
     });
-    fireEvent.drop(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-      {
-        dataTransfer,
-      },
-    );
+    fireEvent.drop(getFlagButtonByCountryName(targetCountryName), {
+      dataTransfer,
+    });
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
-    ).toBeDisabled();
+    expect(getFlagButtonByCountryName(targetCountryName)).toBeDisabled();
   });
 
   it('completes level two after the first four active flags', async () => {
@@ -646,17 +629,13 @@ describe('App', () => {
     }
 
     await user.click(screen.getByRole('button', { name: distractorName }));
-    await user.click(
-      screen.getByRole('button', { name: `Match Flag of ${targetFlagName}` }),
-    );
+    await user.click(getFlagButtonByCountryName(targetFlagName));
 
     expect(getCountryPanelNames()).toEqual(initialCountryNames);
     expect(getActiveFlagNames()).toEqual(initialFlagNames);
 
     await user.click(screen.getByRole('button', { name: targetFlagName }));
-    await user.click(
-      screen.getByRole('button', { name: `Match Flag of ${targetFlagName}` }),
-    );
+    await user.click(getFlagButtonByCountryName(targetFlagName));
 
     expect(getCountryPanelNames()).not.toContain(targetFlagName);
     expect(getCountryPanelNames()).toContain(distractorName);
@@ -708,22 +687,32 @@ describe('App', () => {
 
 function getActiveFlagButtons(): HTMLButtonElement[] {
   return screen.getAllByRole<HTMLButtonElement>('button', {
-    name: /^Match Flag of /,
+    name: /^Select flag described as: /,
   });
 }
 
 function getActiveFlagNames(): string[] {
   return getActiveFlagButtons().map((button) => {
-    const countryName = button
-      .getAttribute('aria-label')
-      ?.replace('Match Flag of ', '');
+    const countryName = button.getAttribute('data-country-name');
 
-    if (countryName === undefined) {
-      throw new Error('Active flag button is missing an accessible country name.');
+    if (countryName === null) {
+      throw new Error('Active flag button is missing a test country name.');
     }
 
     return countryName;
   });
+}
+
+function getFlagButtonByCountryName(countryName: string): HTMLButtonElement {
+  const flagButton = getActiveFlagButtons().find(
+    (button) => button.getAttribute('data-country-name') === countryName,
+  );
+
+  if (flagButton === undefined) {
+    throw new Error(`No active flag button found for "${countryName}".`);
+  }
+
+  return flagButton;
 }
 
 function getCountryPanelNames(): string[] {
@@ -740,12 +729,10 @@ async function completeActiveFlags(user: ReturnType<typeof userEvent.setup>) {
   const flagButtons = getIncompleteFlagButtons();
 
   for (const flagButton of flagButtons) {
-    const countryName = flagButton
-      .getAttribute('aria-label')
-      ?.replace('Match Flag of ', '');
+    const countryName = flagButton.getAttribute('data-country-name');
 
-    if (countryName === undefined) {
-      throw new Error('Active flag button is missing an accessible country name.');
+    if (countryName === null) {
+      throw new Error('Active flag button is missing a test country name.');
     }
 
     await user.click(screen.getByRole('button', { name: countryName }));

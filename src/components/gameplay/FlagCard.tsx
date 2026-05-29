@@ -16,12 +16,14 @@ interface FlagCardProps {
   isLocked: boolean;
   onClick: () => void;
   onDrop: (event: DragEvent<HTMLButtonElement>) => void;
+  answerName?: string;
   revealedCountryName?: string;
   selectedCountryName?: string;
 }
 
 export function FlagCard({
   attempt,
+  answerName,
   feedback,
   flag,
   isLocked,
@@ -47,8 +49,9 @@ export function FlagCard({
       variants={feedbackVariants}
     >
       <button
-        aria-label={`Match ${flag.alt}`}
+        aria-label={`Select flag described as: ${flag.alt}`}
         className="block w-full rounded text-left outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel disabled:cursor-not-allowed"
+        data-country-name={answerName}
         disabled={isLocked}
         onClick={onClick}
         onDragOver={(event) => {

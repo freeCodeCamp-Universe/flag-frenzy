@@ -309,6 +309,10 @@ export function FlagMatchEngine({
                 <FlagCard
                   key={flag.id}
                   attempt={attempt}
+                  answerName={
+                    countriesById.get(playableLevel?.correctMatches[flag.id] ?? '')
+                      ?.name
+                  }
                   feedback={feedback}
                   flag={flag}
                   isLocked={locked}

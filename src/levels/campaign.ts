@@ -1,4 +1,5 @@
 import type { CountryOption, FlagAsset, GameLevel } from '../game/types';
+import { flagDescriptions } from './flagDescriptions';
 
 interface CountrySeed {
   code: string;
@@ -25,7 +26,7 @@ function country(slug: string, name: string, code: string): CountrySeed {
 function createLevel({ countries, mode = 'timed', number }: LevelSeed): GameLevel {
   const complexity = getLevelComplexity(number);
   const flags = countries.map<FlagAsset>((seed) => ({
-    alt: `Flag of ${seed.name}`,
+    alt: getFlagDescription(seed.slug),
     id: getFlagId(seed.slug),
     src: `${flagCdnBaseUrl}/${seed.code.toLowerCase()}.png`,
   }));
@@ -57,6 +58,16 @@ function getCountryId(slug: string): string {
 
 function getFlagId(slug: string): string {
   return `flag-${slug}`;
+}
+
+function getFlagDescription(slug: string): string {
+  const description = flagDescriptions[slug];
+
+  if (description === undefined) {
+    throw new Error(`Missing accessible flag description for "${slug}".`);
+  }
+
+  return description;
 }
 
 function getLevelComplexity(number: number): number {
