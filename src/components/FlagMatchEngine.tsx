@@ -281,14 +281,21 @@ export function FlagMatchEngine({
       <AnimatePresence mode="wait">
         <motion.div
           animate="center"
-          className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]"
+          className="mt-5 grid gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]"
           exit="exit"
           initial="enter"
           key={playableLevel?.id ?? level.id}
           transition={getAnimationTransition(0.24)}
           variants={levelAdvanceVariants}
         >
-          <div className="grid gap-3 sm:grid-cols-2">
+          <CountryBank
+            countries={availableCountries}
+            selectedCountryId={selectedCountryId}
+            selectedCountryName={selectedCountryName}
+            onSelect={setSelectedCountryId}
+          />
+
+          <div aria-label="Flags" className="grid gap-3 sm:grid-cols-2" role="region">
             {boardFlags.map((flag) => {
               const attempt = attempts[flag.id];
               const locked =
@@ -327,13 +334,6 @@ export function FlagMatchEngine({
               </div>
             ) : null}
           </div>
-
-          <CountryBank
-            countries={availableCountries}
-            selectedCountryId={selectedCountryId}
-            selectedCountryName={selectedCountryName}
-            onSelect={setSelectedCountryId}
-          />
         </motion.div>
       </AnimatePresence>
 

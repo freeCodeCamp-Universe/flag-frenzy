@@ -89,6 +89,23 @@ describe('App', () => {
     expect(getActiveFlagButtons()).toHaveLength(4);
   });
 
+  it('renders Countries before the flag grid for gameplay layout', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+
+    const countriesPanel = screen.getByRole('complementary', { name: 'Countries' });
+    const flagGrid = screen.getByRole('region', { name: 'Flags' });
+
+    expect(countriesPanel.compareDocumentPosition(flagGrid)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
   it('matches flags to countries by click and shows feedback', async () => {
     const user = userEvent.setup();
 
