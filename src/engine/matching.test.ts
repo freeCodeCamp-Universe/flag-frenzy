@@ -96,11 +96,15 @@ describe('matching engine', () => {
     const result = validateMatches(beginnerLevel, {
       'flag-brazil': 'country-brazil',
       'flag-canada': 'country-canada',
+      'flag-germany': 'country-germany',
+      'flag-italy': 'country-italy',
       'flag-france': 'country-france',
       'flag-japan': 'country-japan',
+      'flag-spain': 'country-spain',
+      'flag-united-states': 'country-united-states',
     });
 
-    expect(result.correctCount).toBe(4);
+    expect(result.correctCount).toBe(8);
     expect(result.incorrectCount).toBe(0);
     expect(result.isComplete).toBe(true);
     expect(result.isPerfect).toBe(true);
@@ -113,10 +117,17 @@ describe('matching engine', () => {
     });
 
     expect(result.correctCount).toBe(1);
-    expect(result.incorrectCount).toBe(3);
+    expect(result.incorrectCount).toBe(7);
     expect(result.isComplete).toBe(false);
     expect(result.isPerfect).toBe(false);
-    expect(result.missingFlagIds).toEqual(['flag-japan', 'flag-france']);
+    expect(result.missingFlagIds).toEqual([
+      'flag-japan',
+      'flag-france',
+      'flag-united-states',
+      'flag-germany',
+      'flag-italy',
+      'flag-spain',
+    ]);
   });
 
   it('reports malformed level references', () => {

@@ -36,13 +36,7 @@ describe('campaign levels', () => {
       const levelNumber = getLevelNumber(level.id);
       const flagCount = level.flags.length;
 
-      if (levelNumber <= 10) {
-        expect(flagCount).toBeGreaterThanOrEqual(3);
-        expect(flagCount).toBeLessThanOrEqual(5);
-      } else if (levelNumber <= 20) {
-        expect(flagCount).toBeGreaterThanOrEqual(5);
-        expect(flagCount).toBeLessThanOrEqual(8);
-      } else if (levelNumber <= 25) {
+      if (levelNumber <= 25) {
         expect(flagCount).toBeGreaterThanOrEqual(8);
         expect(flagCount).toBeLessThanOrEqual(10);
       } else {
@@ -50,6 +44,10 @@ describe('campaign levels', () => {
         expect(flagCount).toBeLessThanOrEqual(12);
       }
     }
+  });
+
+  it('gives level one a replayable source pool', () => {
+    expect(campaignLevels[0]?.flags.length).toBeGreaterThan(4);
   });
 
   it('matches countries, flags, options, and correct answers one-to-one', () => {

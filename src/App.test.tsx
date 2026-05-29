@@ -3,6 +3,7 @@ import {
   render,
   screen,
   act,
+  waitFor,
   waitForElementToBeRemoved,
   within,
 } from '@testing-library/react';
@@ -10,6 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { campaignLevels } from './levels/campaign';
 import { createMemoryStorage } from './test/createMemoryStorage';
 import { progressStorageKey } from './utils/progressStorage';
 
@@ -20,6 +22,7 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -81,7 +84,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Level 1 unlocked' }));
 
     expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Canada' })).toBeInTheDocument();
+    expect(getActiveFlagButtons()).toHaveLength(4);
   });
 
   it('matches flags to countries by click and shows feedback', async () => {
@@ -98,49 +101,77 @@ describe('App', () => {
       screen.getByRole('complementary', { name: 'Countries' }),
     );
     const countryButtons = countriesPanel.getAllByRole('button');
-    const levelOneCountryNames = new Set(['Canada', 'Japan', 'Brazil', 'France']);
+    const countryButtonNames = countryButtons.map((button) => button.textContent);
+    const activeFlagNames = getActiveFlagNames();
+    const selectedCountryName = activeFlagNames[0];
 
-    expect(countriesPanel.getByText('Canada')).toBeInTheDocument();
-    expect(countryButtons.length).toBeGreaterThan(levelOneCountryNames.size);
+    if (selectedCountryName === undefined) {
+      throw new Error('Expected at least one active flag.');
+    }
+
+    expect(countriesPanel.getByText(selectedCountryName)).toBeInTheDocument();
+    expect(countryButtons).toHaveLength(8);
+    expect(countryButtonNames).toEqual(expect.arrayContaining(activeFlagNames));
     expect(
-      countryButtons.some((button) => !levelOneCountryNames.has(button.textContent)),
-    ).toBe(true);
+      countryButtonNames.filter((name) => !activeFlagNames.includes(name)),
+    ).toHaveLength(4);
 
-    await user.click(screen.getByRole('button', { name: 'Canada' }));
+    await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
-    expect(screen.getByText('Canada selected')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Canada' })).toHaveAttribute(
+    expect(screen.getByText(`${selectedCountryName} selected`)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: selectedCountryName })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
 
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
+    await user.click(
+      screen.getByRole('button', { name: `Match Flag of ${selectedCountryName}` }),
+    );
 
     expect(screen.getByLabelText('correct')).toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: `Match Flag of ${selectedCountryName}` }),
+    ).toBeDisabled();
     expect(screen.queryByText('locked')).not.toBeInTheDocument();
-    expect(screen.getAllByText('Canada').length).toBeGreaterThan(0);
-    expect(countriesPanel.queryByText('Canada')).not.toBeInTheDocument();
+    expect(screen.getAllByText(selectedCountryName).length).toBeGreaterThan(0);
+    expect(countriesPanel.queryByText(selectedCountryName)).not.toBeInTheDocument();
   });
 
-  it('shuffles in extra wrong country options on the game board', async () => {
-    const user = userEvent.setup();
+  it('fills small levels with global distractor countries', () => {
+    window.history.pushState({}, '', '/play?level=2');
 
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: 'Start' }));
+    const activeFlagNames = getActiveFlagNames();
+    const countryPanelNames = getCountryPanelNames();
 
-    const countryButtons = within(
-      screen.getByRole('complementary', { name: 'Countries' }),
-    ).getAllByRole('button');
-    const levelOneCountryNames = new Set(['Canada', 'Japan', 'Brazil', 'France']);
-
-    expect(countryButtons.length).toBeGreaterThan(levelOneCountryNames.size);
+    expect(activeFlagNames).toHaveLength(4);
+    expect(countryPanelNames).toHaveLength(8);
+    expect(countryPanelNames).toEqual(expect.arrayContaining(activeFlagNames));
     expect(
-      countryButtons.some((button) => !levelOneCountryNames.has(button.textContent)),
-    ).toBe(true);
+      countryPanelNames.filter((name) => !activeFlagNames.includes(name)),
+    ).toHaveLength(4);
+    expect(new Set(countryPanelNames).size).toBe(countryPanelNames.length);
+  });
+
+  it('shows distractor countries without duplicating panel options', () => {
+    window.history.pushState({}, '', '/play?level=11');
+
+    render(<App />);
+
+    const activeFlagNames = getActiveFlagNames();
+    const countryPanelNames = getCountryPanelNames();
+
+    expect(activeFlagNames).toHaveLength(4);
+    expect(countryPanelNames.length).toBeGreaterThanOrEqual(8);
+    expect(countryPanelNames.length).toBeLessThanOrEqual(10);
+    expect(countryPanelNames).toEqual(expect.arrayContaining(activeFlagNames));
+    expect(
+      countryPanelNames.filter((name) => !activeFlagNames.includes(name)).length,
+    ).toBeGreaterThanOrEqual(4);
+    expect(new Set(countryPanelNames).size).toBe(countryPanelNames.length);
   });
 
   it('pauses, resumes, and quits from the pause modal', async () => {
@@ -189,7 +220,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'United States' })).toBeInTheDocument();
+    expect(getActiveFlagButtons()).toHaveLength(4);
   });
 
   it('keeps incorrect matches retryable', async () => {
@@ -199,25 +230,42 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
-    await user.click(screen.getByRole('button', { name: 'Japan' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
+    const targetCountryName = getActiveFlagNames()[0];
+    const wrongCountryName = getCountryPanelNames().find(
+      (countryName) => countryName !== targetCountryName,
+    );
+
+    if (targetCountryName === undefined || wrongCountryName === undefined) {
+      throw new Error('Expected a target flag and a wrong country option.');
+    }
+
+    await user.click(screen.getByRole('button', { name: wrongCountryName }));
+    await user.click(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+    );
 
     expect(screen.getByText('incorrect')).toBeInTheDocument();
     expect(screen.getByText('Not quite. Try another country.')).toBeInTheDocument();
     expect(
       within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
-        'Canada',
+        targetCountryName,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Hint' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+    ).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: 'Canada' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
+    await user.click(screen.getByRole('button', { name: targetCountryName }));
+    await user.click(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+    );
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+    ).toBeDisabled();
   });
 
   it('shows summary on timeout without unlocking the next level', async () => {
@@ -277,16 +325,26 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
     const dataTransfer = createDataTransfer();
+    const targetCountryName = getActiveFlagNames()[0];
 
-    fireEvent.dragStart(screen.getByRole('button', { name: 'Canada' }), {
+    if (targetCountryName === undefined) {
+      throw new Error('Expected at least one active flag.');
+    }
+
+    fireEvent.dragStart(screen.getByRole('button', { name: targetCountryName }), {
       dataTransfer,
     });
-    fireEvent.drop(screen.getByRole('button', { name: 'Match Flag of Canada' }), {
-      dataTransfer,
-    });
+    fireEvent.drop(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+      {
+        dataTransfer,
+      },
+    );
 
     expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Match Flag of Canada' })).toBeDisabled();
+    expect(
+      screen.getByRole('button', { name: `Match Flag of ${targetCountryName}` }),
+    ).toBeDisabled();
   });
 
   it('completes level two after the first four active flags', async () => {
@@ -298,6 +356,11 @@ describe('App', () => {
 
     expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
+    expect(new Set(getActiveFlagNames()).size).toBe(4);
+    expect(getCountryPanelNames()).toEqual(
+      expect.arrayContaining(getActiveFlagNames()),
+    );
+    expect(getCountryPanelNames()).toHaveLength(8);
 
     await completeActiveFlags(user);
 
@@ -308,6 +371,126 @@ describe('App', () => {
     expect(screen.queryByLabelText('Correct: 0/1')).not.toBeInTheDocument();
   });
 
+  it('keeps active flags stable during an attempt', async () => {
+    const user = userEvent.setup();
+
+    window.history.pushState({}, '', '/play?level=2');
+
+    render(<App />);
+
+    const initialFlagNames = getActiveFlagNames();
+    const firstCountryName = initialFlagNames[0];
+    const secondFlagButton = getActiveFlagButtons()[1];
+
+    if (firstCountryName === undefined || secondFlagButton === undefined) {
+      throw new Error('Expected at least two active flags.');
+    }
+
+    await user.click(screen.getByRole('button', { name: firstCountryName }));
+    await user.click(secondFlagButton);
+
+    expect(getActiveFlagNames()).toEqual(initialFlagNames);
+  });
+
+  it('selects active flags from the full level pool', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    window.history.pushState({}, '', '/play?level=1');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(getActiveFlagButtons()).toHaveLength(4);
+    });
+
+    const firstFourLevelOneNames =
+      campaignLevels[0]?.countries.slice(0, 4).map((country) => country.name) ?? [];
+
+    expect(getActiveFlagNames()).not.toEqual(
+      expect.arrayContaining(firstFourLevelOneNames),
+    );
+
+    randomSpy.mockRestore();
+  });
+
+  it('can select a different flag set when replaying a level', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    window.history.pushState({}, '', '/play?level=1');
+
+    const firstRender = render(<App />);
+
+    await waitFor(() => {
+      expect(getActiveFlagButtons()).toHaveLength(4);
+    });
+
+    const firstFlagNames = getActiveFlagNames();
+    firstRender.unmount();
+    randomSpy.mockReturnValue(0.99);
+    window.history.pushState({}, '', '/play?level=1');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(getActiveFlagButtons()).toHaveLength(4);
+    });
+
+    expect(getActiveFlagNames()).not.toEqual(firstFlagNames);
+  });
+
+  it('keeps country options stable and only removes correct matches', async () => {
+    const user = userEvent.setup();
+
+    window.history.pushState({}, '', '/play?level=11');
+
+    render(<App />);
+
+    const initialFlagNames = getActiveFlagNames();
+    const initialCountryNames = getCountryPanelNames();
+    const targetFlagName = initialFlagNames[0];
+    const distractorName = initialCountryNames.find(
+      (countryName) => !initialFlagNames.includes(countryName),
+    );
+
+    if (targetFlagName === undefined || distractorName === undefined) {
+      throw new Error('Expected active and distractor country options.');
+    }
+
+    await user.click(screen.getByRole('button', { name: distractorName }));
+    await user.click(
+      screen.getByRole('button', { name: `Match Flag of ${targetFlagName}` }),
+    );
+
+    expect(getCountryPanelNames()).toEqual(initialCountryNames);
+    expect(getActiveFlagNames()).toEqual(initialFlagNames);
+
+    await user.click(screen.getByRole('button', { name: targetFlagName }));
+    await user.click(
+      screen.getByRole('button', { name: `Match Flag of ${targetFlagName}` }),
+    );
+
+    expect(getCountryPanelNames()).not.toContain(targetFlagName);
+    expect(getCountryPanelNames()).toContain(distractorName);
+  });
+
+  it('completes a level while distractor countries are still visible', async () => {
+    const user = userEvent.setup();
+
+    window.history.pushState({}, '', '/play?level=11');
+
+    render(<App />);
+
+    expect(getActiveFlagButtons()).toHaveLength(4);
+    expect(getCountryPanelNames().length).toBeGreaterThanOrEqual(8);
+
+    await completeActiveFlags(user);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Level Summary' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Correct: 0/1')).not.toBeInTheDocument();
+  });
+
   it('advances to the next level after a perfect round', async () => {
     const user = userEvent.setup();
 
@@ -315,14 +498,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
-    await user.click(screen.getByRole('button', { name: 'Canada' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Canada' }));
-    await user.click(screen.getByRole('button', { name: 'Japan' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Japan' }));
-    await user.click(screen.getByRole('button', { name: 'Brazil' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of Brazil' }));
-    await user.click(screen.getByRole('button', { name: 'France' }));
-    await user.click(screen.getByRole('button', { name: 'Match Flag of France' }));
+    await completeActiveFlags(user);
 
     expect(
       await screen.findByRole('heading', { name: 'Level Summary' }),
@@ -332,14 +508,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Next Level' }));
 
     expect(await screen.findByText('level 2/30 / timed')).toBeInTheDocument();
-    expect(
-      await screen.findByRole('button', { name: 'United States' }),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
-        'United States',
-      ),
-    ).toBeInTheDocument();
+    expect(getActiveFlagButtons()).toHaveLength(4);
 
     await user.click(screen.getByRole('link', { name: 'flag-frenzy' }));
     await user.click(screen.getByRole('button', { name: 'Level Select' }));
@@ -352,6 +521,26 @@ function getActiveFlagButtons(): HTMLButtonElement[] {
   return screen.getAllByRole<HTMLButtonElement>('button', {
     name: /^Match Flag of /,
   });
+}
+
+function getActiveFlagNames(): string[] {
+  return getActiveFlagButtons().map((button) => {
+    const countryName = button
+      .getAttribute('aria-label')
+      ?.replace('Match Flag of ', '');
+
+    if (countryName === undefined) {
+      throw new Error('Active flag button is missing an accessible country name.');
+    }
+
+    return countryName;
+  });
+}
+
+function getCountryPanelNames(): string[] {
+  return within(screen.getByRole('complementary', { name: 'Countries' }))
+    .getAllByRole('button')
+    .map((button) => button.textContent);
 }
 
 function getIncompleteFlagButtons(): HTMLButtonElement[] {

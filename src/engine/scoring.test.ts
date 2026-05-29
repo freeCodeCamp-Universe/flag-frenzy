@@ -26,10 +26,10 @@ describe('scoring engine', () => {
         validation,
       }),
     ).toEqual({
-      baseScore: 400,
+      baseScore: 800,
       incorrectPenalty: 0,
       speedBonus: 125,
-      totalScore: 525,
+      totalScore: 925,
     });
   });
 
