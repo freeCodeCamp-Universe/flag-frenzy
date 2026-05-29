@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { Link } from 'react-router';
+import Link from 'next/link';
 
 export function GameShell({ children }: PropsWithChildren) {
   return (
@@ -8,7 +8,7 @@ export function GameShell({ children }: PropsWithChildren) {
         <nav aria-label="Primary navigation">
           <Link
             className="font-bold outline-none transition hover:text-fcc-highlight focus-visible:ring-2 focus-visible:ring-focus"
-            to="/"
+            href="/"
           >
             flag-frenzy
           </Link>

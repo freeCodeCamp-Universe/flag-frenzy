@@ -40,6 +40,24 @@ describe('App', () => {
     expect(screen.queryByText('status: idle')).not.toBeInTheDocument();
   });
 
+  it('renders level select when opened directly at /levels', () => {
+    window.history.pushState({}, '', '/levels');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: 'Levels' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /Level \d+/ })).toHaveLength(30);
+  });
+
+  it('points primary navigation at the home route', () => {
+    render(<App />);
+
+    expect(screen.getByRole('link', { name: 'flag-frenzy' })).toHaveAttribute(
+      'href',
+      '/',
+    );
+  });
+
   it('opens level select and renders locked and unlocked states', async () => {
     const user = userEvent.setup();
 

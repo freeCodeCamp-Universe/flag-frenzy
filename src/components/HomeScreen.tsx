@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router';
 
 import { MotionButton } from './MotionButton';
 
 interface HomeScreenProps {
   nextLevelNumber: number;
+  onOpenLevelSelect: () => void;
+  onStartLevel: (levelNumber: number) => void;
 }
 
 const screenTransition = {
@@ -12,17 +13,11 @@ const screenTransition = {
   ease: 'easeOut',
 } as const;
 
-export function HomeScreen({ nextLevelNumber }: HomeScreenProps) {
-  const navigate = useNavigate();
-
-  function startLevel() {
-    void navigate(`/play?level=${String(nextLevelNumber)}`);
-  }
-
-  function openLevelSelect() {
-    void navigate('/levels');
-  }
-
+export function HomeScreen({
+  nextLevelNumber,
+  onOpenLevelSelect,
+  onStartLevel,
+}: HomeScreenProps) {
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
@@ -43,12 +38,12 @@ export function HomeScreen({ nextLevelNumber }: HomeScreenProps) {
             <MotionButton
               intent="primary"
               onClick={() => {
-                startLevel();
+                onStartLevel(nextLevelNumber);
               }}
             >
               Start
             </MotionButton>
-            <MotionButton intent="secondary" onClick={openLevelSelect}>
+            <MotionButton intent="secondary" onClick={onOpenLevelSelect}>
               Level Select
             </MotionButton>
           </div>

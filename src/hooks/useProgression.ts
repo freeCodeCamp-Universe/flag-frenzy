@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
 
-import { recordLevelCompletion } from '../engine/progression';
+import { createDefaultProgress, recordLevelCompletion } from '../engine/progression';
 import type { GameLevel, GameProgress } from '../game/types';
 import { loadProgress, saveProgress } from '../utils/progressStorage';
 
 export function useProgression() {
-  const [progress, setProgress] = useState<GameProgress>(() => loadProgress());
+  const [progress, setProgress] = useState<GameProgress>(() => {
+    if (typeof window === 'undefined') {
+      return createDefaultProgress();
+    }
+
+    return loadProgress();
+  });
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     saveProgress(progress);
   }, [progress]);
 

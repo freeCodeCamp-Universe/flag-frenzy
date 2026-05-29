@@ -1,7 +1,7 @@
 # Flag Frenzy
 
-Flag Frenzy is a fast flag-matching game built with Vite, React, TypeScript,
-Tailwind CSS, Framer Motion, React Router, and Vitest.
+Flag Frenzy is a fast flag-matching game built with Next.js, React, TypeScript,
+Tailwind CSS, Framer Motion, and Vitest.
 
 Players match country flags to country names by clicking or dragging country
 options onto flag cards. Correct matches lock in. Incorrect matches stay
@@ -23,7 +23,7 @@ The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style.
 
 ## Routes
 
-The app uses React Router for three main pages:
+The app uses Next.js App Router pages:
 
 - `/`: centered home screen with Start and Level Select actions
 - `/levels`: level select grid with locked/unlocked states and high scores
@@ -125,9 +125,9 @@ npm run validate
 
 Useful scripts:
 
-- `npm run dev`: start Vite locally
-- `npm run build`: typecheck and build production assets
-- `npm run preview`: preview the production build
+- `npm run dev`: start Next.js locally
+- `npm run build`: build the production app
+- `npm run start`: start the production server
 - `npm run test`: run Vitest in watch mode
 - `npm run test:run`: run Vitest once
 - `npm run typecheck`: run TypeScript project checks
@@ -140,6 +140,7 @@ Useful scripts:
 
 ```text
 src/
+  app/             Next.js App Router pages and shared route state provider
   components/      React UI components
   engine/          Pure gameplay, matching, scoring, progression logic
   game/            Shared game types

@@ -2,7 +2,7 @@ site: flag-frenzy
 
 build:
   command: npm run build
-  output: dist
+  output: out
 
 deploy:
   preview: true

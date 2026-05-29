@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router';
 
 import type { HomeLevel } from '../game/types';
 import { LevelGrid } from './LevelGrid';
 
 interface LevelSelectScreenProps {
   levels: HomeLevel[];
+  onSelectLevel: (levelNumber: number) => void;
   unlockedCount: number;
 }
 
@@ -14,13 +14,11 @@ const screenTransition = {
   ease: 'easeOut',
 } as const;
 
-export function LevelSelectScreen({ levels, unlockedCount }: LevelSelectScreenProps) {
-  const navigate = useNavigate();
-
-  function startLevel(levelNumber: number) {
-    void navigate(`/play?level=${String(levelNumber)}`);
-  }
-
+export function LevelSelectScreen({
+  levels,
+  onSelectLevel,
+  unlockedCount,
+}: LevelSelectScreenProps) {
   return (
     <motion.section
       animate={{ opacity: 1, y: 0 }}
@@ -34,7 +32,7 @@ export function LevelSelectScreen({ levels, unlockedCount }: LevelSelectScreenPr
         </div>
         <p className="font-mono text-base text-fcc-success">{unlockedCount} unlocked</p>
       </div>
-      <LevelGrid levels={levels} onSelectLevel={startLevel} />
+      <LevelGrid levels={levels} onSelectLevel={onSelectLevel} />
     </motion.section>
   );
 }
