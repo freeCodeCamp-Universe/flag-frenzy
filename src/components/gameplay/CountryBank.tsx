@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 import type { CountryOption } from '../../game/types';
 
@@ -15,6 +16,8 @@ export function CountryBank({
   selectedCountryId,
   selectedCountryName,
 }: CountryBankProps) {
+  const canDragCountries = useCanDragCountries();
+
   return (
     <aside
       aria-labelledby="countries-title"
@@ -40,12 +43,12 @@ export function CountryBank({
               <motion.button
                 aria-pressed={isSelected}
                 className={[
-                  'w-full rounded border px-3 py-3 text-left font-mono outline-none transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel',
+                  'w-full touch-pan-y rounded border px-3 py-3 text-left font-mono outline-none transition focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-fcc-panel',
                   isSelected
                     ? 'border-fcc-cta bg-fcc-cta text-fcc-background'
                     : 'border-fcc-border bg-fcc-background text-fcc-foreground hover:border-fcc-highlight hover:bg-fcc-surface',
                 ].join(' ')}
-                draggable
+                draggable={canDragCountries}
                 onClick={() => {
                   onSelect(country.id);
                 }}
@@ -65,4 +68,29 @@ export function CountryBank({
       </ul>
     </aside>
   );
+}
+
+function useCanDragCountries() {
+  const [canDragCountries, setCanDragCountries] = useState(false);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+    function updateCanDragCountries() {
+      setCanDragCountries(mediaQuery.matches);
+    }
+
+    updateCanDragCountries();
+    mediaQuery.addEventListener('change', updateCanDragCountries);
+
+    return () => {
+      mediaQuery.removeEventListener('change', updateCanDragCountries);
+    };
+  }, []);
+
+  return canDragCountries;
 }
