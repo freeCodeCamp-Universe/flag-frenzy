@@ -237,11 +237,17 @@ describe('App', () => {
       countryButtonNames.filter((name) => !activeFlagNames.includes(name)),
     ).toHaveLength(4);
 
+    await user.click(getFlagButtonByCountryName(selectedCountryName));
+
+    expect(screen.getByText('Select a country first.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
     expect(
       screen.getByText(`Now select the flag that matches ${selectedCountryName}.`),
     ).toBeInTheDocument();
+    expect(screen.queryByText('Select a country first.')).not.toBeInTheDocument();
     expect(screen.queryByText(/ready:/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: selectedCountryName })).toHaveAttribute(
       'aria-pressed',

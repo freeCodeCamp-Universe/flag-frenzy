@@ -70,6 +70,7 @@ export function FlagMatchEngine({
   const [incorrectAttemptCount, setIncorrectAttemptCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [flagClickMessage, setFlagClickMessage] = useState<string | undefined>();
   const [attemptConfig, setAttemptConfig] = useState<AttemptConfig>();
   const completedLevelIdRef = useRef<string | undefined>(undefined);
   const playAudioFeedback = useAudioFeedback();
@@ -219,12 +220,20 @@ export function FlagMatchEngine({
 
     playAudioFeedback(attempt.feedback);
     setSelectedCountryId(undefined);
+    setFlagClickMessage(undefined);
   }
 
   function handleFlagClick(flagId: string) {
-    if (!isPaused && selectedCountryId !== undefined) {
-      submitMatch(flagId, selectedCountryId);
+    if (isPaused) {
+      return;
     }
+
+    if (selectedCountryId === undefined) {
+      setFlagClickMessage('Select a country first.');
+      return;
+    }
+
+    submitMatch(flagId, selectedCountryId);
   }
 
   function handleDrop(event: DragEvent<HTMLButtonElement>, flagId: string) {
@@ -254,6 +263,11 @@ export function FlagMatchEngine({
     setIsTutorialOpen(false);
   }
 
+  function selectCountry(countryId: string) {
+    setSelectedCountryId(countryId);
+    setFlagClickMessage(undefined);
+  }
+
   return (
     <section
       aria-labelledby="flag-engine-title"
@@ -278,6 +292,14 @@ export function FlagMatchEngine({
           setIsTutorialOpen(true);
         }}
       />
+      {flagClickMessage === undefined ? null : (
+        <p
+          aria-live="polite"
+          className="mt-4 rounded border border-fcc-danger bg-fcc-background px-3 py-2 font-mono text-base font-bold text-fcc-danger"
+        >
+          {flagClickMessage}
+        </p>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -293,7 +315,7 @@ export function FlagMatchEngine({
             countries={availableCountries}
             selectedCountryId={selectedCountryId}
             selectedCountryName={selectedCountryName}
-            onSelect={setSelectedCountryId}
+            onSelect={selectCountry}
           />
 
           <div aria-label="Flags" className="grid gap-3 sm:grid-cols-2" role="region">
