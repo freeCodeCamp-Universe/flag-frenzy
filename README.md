@@ -9,6 +9,9 @@ retryable and apply a scoring penalty. Each board shuffles the flag cards,
 shuffles the country bank, and adds extra wrong country options so players have
 to identify each flag instead of matching by list order.
 
+The game also includes persistent progress, saved high scores, a reset-progress
+flow, and a persistent Sound Effects setting.
+
 ## Game Concept
 
 The core loop is simple:
@@ -18,6 +21,9 @@ The core loop is simple:
 3. Build a perfect level clear by locking every flag-country pair.
 4. Earn score from correctness and speed.
 5. Unlock the next level only after a perfect clear and persist progress locally.
+
+If a flag is clicked before a country is selected, the board shows a short
+"Select a country first." message instead of silently ignoring the click.
 
 The UI follows freeCodeCamp's dark, high-contrast Command-line Chic style.
 
@@ -54,8 +60,18 @@ Incorrect attempts do not write into `playerMatches`; only correct answers lock.
 This keeps score, completion, and persistence logic clean.
 
 The React board layer shuffles flags and creates the country option bank at
-runtime. The option bank includes the correct countries plus distractors from
-other campaign levels.
+runtime. Each attempt uses up to four active flags. The option bank includes the
+correct countries plus distractors from the current level and other campaign
+levels, usually keeping 8-10 country options visible.
+
+Click matching and drag-and-drop matching are intentionally separate interaction
+paths. On touch-oriented devices, country options remain tap-and-scroll friendly
+so players can select a country, scroll to a distant flag, and tap the flag to
+submit the match. Drag-and-drop remains available for pointer-fine devices.
+
+After the final correct match, the board waits briefly before routing to the
+summary screen. This gives the final flag time to show its success state,
+matched country name, and checkmark before the level result appears.
 
 ## Scoring
 
@@ -76,7 +92,25 @@ unlock the next level. The summary button retries the same level. Only a perfect
 clear unlocks future levels.
 
 Players can pause during a level. The pause modal lets them resume the current
-attempt or quit back to the home screen.
+attempt, toggle Sound Effects, or quit back to the home screen.
+
+## Settings
+
+Settings are stored locally through `src/utils/settingsStorage.ts`.
+
+Persisted settings currently include:
+
+- Sound Effects: on by default
+- placeholder fields for future settings such as music, reduced motion, and
+  color-blind mode
+
+The Sound Effects toggle appears on the home screen and in the pause modal. All
+gameplay sound playback goes through `src/hooks/useAudioFeedback.ts`, so correct
+match, incorrect match, pending/action, completion, and future sound effects
+respect the same setting.
+
+The reset-progress flow clears Flag Frenzy local storage keys, including saved
+progress and tutorial completion, without calling `localStorage.clear()`.
 
 ## 30-Level Progression
 
@@ -100,8 +134,24 @@ Persisted progress includes:
 
 Malformed progress is sanitized before use.
 
+Players can reset progress from the level select screen after confirming the
+destructive action. Resetting returns the app to the new-player state with only
+level 1 unlocked, no completed levels, no high scores, and tutorial completion
+cleared.
+
 Retry counts are session state only. They show how many failed attempts the
 player has made for the current level during the active app session.
+
+## Accessibility
+
+The gameplay HUD uses natural-language progress wording, such as "Level 2 of
+30" and "3 of 4 matches completed", instead of slash-separated counters that
+screen readers may announce awkwardly.
+
+Country and flag controls are keyboard-accessible buttons. Players can tab to a
+country, select it, tab to a flag, and press Enter or Space to submit a match.
+The first-time tutorial, pause menu, reset confirmation, and completion reveal
+messages use accessible dialog or live-region patterns.
 
 ## Development
 
