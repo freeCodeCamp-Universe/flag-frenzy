@@ -14,6 +14,7 @@ import { App } from './App';
 import { campaignLevels } from './levels/campaign';
 import { createMemoryStorage } from './test/createMemoryStorage';
 import { progressStorageKey, tutorialStorageKey } from './utils/progressStorage';
+import { createDefaultSettings, settingsStorageKey } from './utils/settingsStorage';
 
 describe('App', () => {
   beforeEach(() => {
@@ -23,6 +24,7 @@ describe('App', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -33,6 +35,11 @@ describe('App', () => {
     expect(screen.getByText('Match flags to countries quickly')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Level Select' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Sound Effects: ON' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     expect(
       screen.queryByRole('button', { name: 'Accessibility' }),
     ).not.toBeInTheDocument();
@@ -41,6 +48,40 @@ describe('App', () => {
       screen.queryByRole('button', { name: 'Level 1 unlocked' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText('status: idle')).not.toBeInTheDocument();
+  });
+
+  it('persists the sound effects setting from the home screen', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('switch', { name: 'Sound Effects: ON' }));
+
+    expect(screen.getByRole('switch', { name: 'Sound Effects: OFF' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    );
+    await waitFor(() => {
+      expect(localStorage.getItem(settingsStorageKey)).toContain(
+        '"soundEffects":false',
+      );
+    });
+  });
+
+  it('restores the saved sound effects setting on page load', async () => {
+    localStorage.setItem(
+      settingsStorageKey,
+      JSON.stringify({
+        ...createDefaultSettings(),
+        soundEffects: false,
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('switch', { name: 'Sound Effects: OFF' }),
+    ).toHaveAttribute('aria-checked', 'false');
   });
 
   it('renders level select when opened directly at /levels', () => {
@@ -445,6 +486,108 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument();
   });
 
+  it('toggles sound effects from the pause modal without leaving gameplay', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(tutorialStorageKey, 'true');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+
+    const pauseDialog = screen.getByRole('dialog', { name: 'Pause Menu' });
+
+    expect(
+      within(pauseDialog).getByRole('switch', { name: 'Sound Effects: ON' }),
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await user.click(
+      within(pauseDialog).getByRole('switch', { name: 'Sound Effects: ON' }),
+    );
+
+    expect(
+      within(pauseDialog).getByRole('switch', { name: 'Sound Effects: OFF' }),
+    ).toHaveAttribute('aria-checked', 'false');
+    await waitFor(() => {
+      expect(localStorage.getItem(settingsStorageKey)).toContain(
+        '"soundEffects":false',
+      );
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Resume' }));
+
+    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.queryByText('SFX OFF')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+
+    expect(
+      within(screen.getByRole('dialog', { name: 'Pause Menu' })).getByRole('switch', {
+        name: 'Sound Effects: OFF',
+      }),
+    ).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('does not play audio while sound effects are disabled', async () => {
+    const user = userEvent.setup();
+    const AudioContextMock = vi.fn(function createAudioContextMock() {
+      return createAudioContextStub();
+    });
+
+    vi.stubGlobal('AudioContext', AudioContextMock);
+    localStorage.setItem(tutorialStorageKey, 'true');
+    localStorage.setItem(
+      settingsStorageKey,
+      JSON.stringify({
+        ...createDefaultSettings(),
+        soundEffects: false,
+      }),
+    );
+
+    render(<App />);
+
+    expect(
+      await screen.findByRole('switch', { name: 'Sound Effects: OFF' }),
+    ).toHaveAttribute('aria-checked', 'false');
+
+    await user.click(screen.getByRole('button', { name: 'Start' }));
+    expect(screen.queryByText('SFX OFF')).not.toBeInTheDocument();
+
+    const firstCountryName = getActiveFlagNames()[0];
+
+    if (firstCountryName === undefined) {
+      throw new Error('Expected at least one active flag.');
+    }
+
+    await user.click(screen.getByRole('button', { name: firstCountryName }));
+    await user.click(getFlagButtonByCountryName(firstCountryName));
+
+    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(AudioContextMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Pause Menu' })).getByRole('switch', {
+        name: 'Sound Effects: OFF',
+      }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Resume' }));
+
+    const secondCountryName = getActiveFlagNames().find(
+      (countryName) => countryName !== firstCountryName,
+    );
+
+    if (secondCountryName === undefined) {
+      throw new Error('Expected another active flag.');
+    }
+
+    await user.click(screen.getByRole('button', { name: secondCountryName }));
+    await user.click(getFlagButtonByCountryName(secondCountryName));
+
+    expect(AudioContextMock).toHaveBeenCalledTimes(1);
+  });
+
   it('starts the next uncompleted level from saved progress', async () => {
     const user = userEvent.setup();
 
@@ -824,4 +967,33 @@ function createDataTransfer(): DataTransfer {
     setDragImage: () => undefined,
     types: [],
   };
+}
+
+function createAudioContextStub(): AudioContext {
+  return {
+    createGain: () =>
+      ({
+        connect: vi.fn(),
+        gain: {
+          exponentialRampToValueAtTime: vi.fn(),
+          setValueAtTime: vi.fn(),
+        },
+      }) as unknown as AudioContext['createGain'] extends () => infer GainNode
+        ? GainNode
+        : never,
+    createOscillator: () =>
+      ({
+        connect: vi.fn(),
+        frequency: {
+          value: 0,
+        },
+        start: vi.fn(),
+        stop: vi.fn(),
+        type: 'sine',
+      }) as unknown as AudioContext['createOscillator'] extends () => infer OscillatorNode
+        ? OscillatorNode
+        : never,
+    currentTime: 0,
+    destination: {} as AudioDestinationNode,
+  } as AudioContext;
 }

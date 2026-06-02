@@ -72,3 +72,11 @@ export interface GameProgress {
   highestUnlockedLevel: number;
   version: 1;
 }
+
+export interface GameSettings {
+  colorBlindMode: boolean;
+  musicEnabled: boolean;
+  reducedMotion: boolean;
+  soundEffects: boolean;
+  version: 1;
+}

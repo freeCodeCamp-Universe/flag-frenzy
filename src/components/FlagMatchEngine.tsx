@@ -19,10 +19,11 @@ import type {
 } from '../game/types';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation';
+import { tutorialStorageKey } from '../utils/progressStorage';
+import { SettingsPanel } from './SettingsPanel';
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
-import { tutorialStorageKey } from '../utils/progressStorage';
 
 const maxActiveFlags = 4;
 const minCountryOptions = 8;
@@ -454,6 +455,9 @@ function PauseModal({ onQuit, onResume }: PauseModalProps) {
         <p className="mt-3 text-base text-fcc-muted">
           Resume the current level or quit to return to the home screen.
         </p>
+        <div className="mt-5">
+          <SettingsPanel compact />
+        </div>
         <div className="mt-5 flex flex-col gap-3 xs:flex-row">
           <button
             className="rounded border border-fcc-cta bg-fcc-cta px-4 py-3 font-mono font-bold text-fcc-background outline-none transition focus-visible:ring-2 focus-visible:ring-focus"

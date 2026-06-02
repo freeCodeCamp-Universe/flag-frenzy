@@ -11,6 +11,8 @@ import {
 import { useRouter } from 'next/navigation';
 
 import type { LevelCompletionSummary } from '../components/FlagMatchEngine';
+import type { GameSettings } from '../game/types';
+import { useGameSettings } from '../hooks/useGameSettings';
 import { useProgression } from '../hooks/useProgression';
 import { campaignLevels } from '../levels/campaign';
 import { createHomeLevels } from '../levels/homeLevels';
@@ -29,6 +31,8 @@ interface FlagFrenzyContextValue {
   levels: HomeLevel[];
   nextLevelNumber: number;
   resetProgress: () => void;
+  setSoundEffects: (soundEffects: boolean) => void;
+  settings: GameSettings;
   startLevel: (levelNumber: number) => void;
   unlockedCount: number;
 }
@@ -54,6 +58,7 @@ export function NextFlagFrenzyProvider({ children }: PropsWithChildren) {
 }
 
 export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderProps) {
+  const { setSoundEffects, settings } = useGameSettings();
   const {
     completeLevel,
     progress,
@@ -90,10 +95,11 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
 
   const resetProgress = useCallback(() => {
     resetSavedProgress();
+    setSoundEffects(true);
     setLevelSummary(undefined);
     setRetryCountsByLevelId({});
     navigate('/');
-  }, [navigate, resetSavedProgress]);
+  }, [navigate, resetSavedProgress, setSoundEffects]);
 
   const handleLevelComplete = useCallback(
     (summary: LevelCompletionSummary) => {
@@ -147,6 +153,8 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
       levels,
       nextLevelNumber,
       resetProgress,
+      setSoundEffects,
+      settings,
       startLevel,
       unlockedCount: progress.highestUnlockedLevel,
     }),
@@ -160,6 +168,8 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
       nextLevelNumber,
       progress.highestUnlockedLevel,
       resetProgress,
+      setSoundEffects,
+      settings,
       startLevel,
     ],
   );
@@ -177,6 +187,15 @@ export function useFlagFrenzy() {
   }
 
   return context;
+}
+
+export function useSettings() {
+  const { setSoundEffects, settings } = useFlagFrenzy();
+
+  return {
+    setSoundEffects,
+    settings,
+  };
 }
 
 function getNextUncompletedLevelNumber(completedLevelIds: string[]): number {

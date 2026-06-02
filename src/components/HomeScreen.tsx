@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 
 import { MotionButton } from './MotionButton';
+import { SettingsPanel } from './SettingsPanel';
 
 interface HomeScreenProps {
   nextLevelNumber: number;
@@ -47,6 +48,8 @@ export function HomeScreen({
               Level Select
             </MotionButton>
           </div>
+
+          <SettingsPanel />
         </div>
       </section>
     </motion.section>

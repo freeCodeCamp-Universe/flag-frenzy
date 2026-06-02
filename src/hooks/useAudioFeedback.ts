@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
 
+import { useSettings } from '../app/FlagFrenzyProvider';
 import type { MatchFeedback } from '../game/types';
 
 type AudioFeedback = MatchFeedback | 'complete';
@@ -24,34 +25,42 @@ const toneByFeedback: Record<AudioFeedback, { duration: number; frequency: numbe
 };
 
 export function useAudioFeedback() {
+  const { settings } = useSettings();
   const audioContextRef = useRef<AudioContext | undefined>(undefined);
 
-  return useCallback((feedback: AudioFeedback) => {
-    const audioWindow = window as Window & {
-      AudioContext?: typeof AudioContext;
-    };
-    const AudioContextConstructor = audioWindow.AudioContext;
+  return useCallback(
+    (feedback: AudioFeedback) => {
+      if (!settings.soundEffects) {
+        return;
+      }
 
-    if (AudioContextConstructor === undefined) {
-      return;
-    }
+      const audioWindow = window as Window & {
+        AudioContext?: typeof AudioContext;
+      };
+      const AudioContextConstructor = audioWindow.AudioContext;
 
-    const audioContext = audioContextRef.current ?? new AudioContextConstructor();
-    audioContextRef.current = audioContext;
+      if (AudioContextConstructor === undefined) {
+        return;
+      }
 
-    const tone = toneByFeedback[feedback];
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    const startsAt = audioContext.currentTime;
+      const audioContext = audioContextRef.current ?? new AudioContextConstructor();
+      audioContextRef.current = audioContext;
 
-    oscillator.frequency.value = tone.frequency;
-    oscillator.type = feedback === 'incorrect' ? 'square' : 'sine';
-    gain.gain.setValueAtTime(0.0001, startsAt);
-    gain.gain.exponentialRampToValueAtTime(0.08, startsAt + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + tone.duration);
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start(startsAt);
-    oscillator.stop(startsAt + tone.duration);
-  }, []);
+      const tone = toneByFeedback[feedback];
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startsAt = audioContext.currentTime;
+
+      oscillator.frequency.value = tone.frequency;
+      oscillator.type = feedback === 'incorrect' ? 'square' : 'sine';
+      gain.gain.setValueAtTime(0.0001, startsAt);
+      gain.gain.exponentialRampToValueAtTime(0.08, startsAt + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + tone.duration);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startsAt);
+      oscillator.stop(startsAt + tone.duration);
+    },
+    [settings.soundEffects],
+  );
 }
