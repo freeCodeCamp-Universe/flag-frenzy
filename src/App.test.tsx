@@ -11,6 +11,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
+import { COMPLETION_REVEAL_DELAY_MS } from './components/FlagMatchEngine';
 import { campaignLevels } from './levels/campaign';
 import { createMemoryStorage } from './test/createMemoryStorage';
 import { progressStorageKey, tutorialStorageKey } from './utils/progressStorage';
@@ -678,9 +679,7 @@ describe('App', () => {
 
     vi.useRealTimers();
 
-    expect(
-      await screen.findByRole('heading', { name: 'Level Summary' }),
-    ).toBeInTheDocument();
+    expect(await findLevelSummary()).toBeInTheDocument();
     expect(screen.getByText('time expired')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry Level' })).toBeInTheDocument();
     expect(screen.getByLabelText('Retries: 1')).toBeInTheDocument();
@@ -702,9 +701,7 @@ describe('App', () => {
 
     vi.useRealTimers();
 
-    expect(
-      await screen.findByRole('heading', { name: 'Level Summary' }),
-    ).toBeInTheDocument();
+    expect(await findLevelSummary()).toBeInTheDocument();
     expect(screen.getByLabelText('Retries: 2')).toBeInTheDocument();
     expect(localStorage.getItem('flag-frenzy:progress:v1')).not.toContain('level-01');
 
@@ -758,9 +755,7 @@ describe('App', () => {
 
     await completeActiveFlags(user);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Level Summary' }),
-    ).toBeInTheDocument();
+    expect(await findLevelSummary()).toBeInTheDocument();
     expect(localStorage.getItem('flag-frenzy:progress:v1')).toContain('level-02');
     expect(
       screen.queryByLabelText('Correct: 0 of 1 matches completed'),
@@ -877,12 +872,51 @@ describe('App', () => {
 
     await completeActiveFlags(user);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Level Summary' }),
-    ).toBeInTheDocument();
+    expect(await findLevelSummary()).toBeInTheDocument();
     expect(
       screen.queryByLabelText('Correct: 0 of 1 matches completed'),
     ).not.toBeInTheDocument();
+  });
+
+  it('shows the final correct match before navigating to the summary', () => {
+    localStorage.setItem(tutorialStorageKey, 'true');
+    vi.useFakeTimers();
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    completeActiveFlagsByFireEvent();
+
+    expect(
+      screen.getByText('Level complete. Showing final match.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 4 of 4 matches completed'),
+    ).toBeInTheDocument();
+    expect(screen.getAllByLabelText('correct')).toHaveLength(4);
+    expect(
+      screen.queryByRole('heading', { name: 'Level Summary' }),
+    ).not.toBeInTheDocument();
+
+    for (const countryButton of within(
+      screen.getByRole('complementary', { name: 'Countries' }),
+    ).getAllByRole('button')) {
+      expect(countryButton).toBeDisabled();
+    }
+
+    act(() => {
+      vi.advanceTimersByTime(COMPLETION_REVEAL_DELAY_MS - 1);
+    });
+
+    expect(
+      screen.queryByRole('heading', { name: 'Level Summary' }),
+    ).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(screen.getByRole('heading', { name: 'Level Summary' })).toBeInTheDocument();
   });
 
   it('advances to the next level after a perfect round', async () => {
@@ -894,9 +928,7 @@ describe('App', () => {
 
     await completeActiveFlags(user);
 
-    expect(
-      await screen.findByRole('heading', { name: 'Level Summary' }),
-    ).toBeInTheDocument();
+    expect(await findLevelSummary()).toBeInTheDocument();
     expect(localStorage.getItem('flag-frenzy:progress:v1')).toContain('level-01');
 
     await user.click(screen.getByRole('button', { name: 'Next Level' }));
@@ -947,6 +979,14 @@ function getCountryPanelNames(): string[] {
     .map((button) => button.textContent);
 }
 
+function findLevelSummary() {
+  return screen.findByRole(
+    'heading',
+    { name: 'Level Summary' },
+    { timeout: COMPLETION_REVEAL_DELAY_MS + 1_000 },
+  );
+}
+
 function getIncompleteFlagButtons(): HTMLButtonElement[] {
   return getActiveFlagButtons().filter((button) => !button.disabled);
 }
@@ -963,6 +1003,21 @@ async function completeActiveFlags(user: ReturnType<typeof userEvent.setup>) {
 
     await user.click(screen.getByRole('button', { name: countryName }));
     await user.click(flagButton);
+  }
+}
+
+function completeActiveFlagsByFireEvent() {
+  const flagButtons = getIncompleteFlagButtons();
+
+  for (const flagButton of flagButtons) {
+    const countryName = flagButton.getAttribute('data-country-name');
+
+    if (countryName === null) {
+      throw new Error('Active flag button is missing a test country name.');
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: countryName }));
+    fireEvent.click(flagButton);
   }
 }
 

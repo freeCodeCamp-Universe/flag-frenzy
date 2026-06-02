@@ -17,6 +17,7 @@ import type {
   MatchValidationResult,
   PlayerMatches,
 } from '../game/types';
+import { useSettings } from '../app/FlagFrenzyProvider';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation';
 import { tutorialStorageKey } from '../utils/progressStorage';
@@ -28,6 +29,8 @@ import { GameplayHud } from './gameplay/GameplayHud';
 const maxActiveFlags = 4;
 const minCountryOptions = 8;
 const maxCountryOptions = 10;
+export const COMPLETION_REVEAL_DELAY_MS = 1200;
+const reducedMotionCompletionRevealDelayMs = 600;
 
 interface AttemptConfig {
   countryOptionIds: string[];
@@ -70,9 +73,12 @@ export function FlagMatchEngine({
   const [incorrectAttemptCount, setIncorrectAttemptCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [isCompletionRevealPending, setIsCompletionRevealPending] = useState(false);
   const [flagClickMessage, setFlagClickMessage] = useState<string | undefined>();
   const [attemptConfig, setAttemptConfig] = useState<AttemptConfig>();
   const completedLevelIdRef = useRef<string | undefined>(undefined);
+  const inputLockedRef = useRef(false);
+  const { settings } = useSettings();
   const playAudioFeedback = useAudioFeedback();
   const level = getPlayableLevel(levels, levelIndex);
   const playableLevel = useMemo(
@@ -118,12 +124,16 @@ export function FlagMatchEngine({
         : validateMatches(playableLevel, playerMatches),
     [playableLevel, playerMatches],
   );
-  const score = calculateLevelScore({
-    elapsedSeconds,
-    incorrectAttempts: incorrectAttemptCount,
-    level: playableLevel ?? level,
-    validation,
-  });
+  const score = useMemo(
+    () =>
+      calculateLevelScore({
+        elapsedSeconds,
+        incorrectAttempts: incorrectAttemptCount,
+        level: playableLevel ?? level,
+        validation,
+      }),
+    [elapsedSeconds, incorrectAttemptCount, level, playableLevel, validation],
+  );
   const isFinalLevel = levelIndex >= levels.length - 1;
   const isTimeExpired =
     playableLevel?.mode === 'timed' &&
@@ -131,8 +141,15 @@ export function FlagMatchEngine({
     elapsedSeconds >= playableLevel.timeLimitSeconds &&
     !validation.isPerfect;
   const isLevelEnded = validation.isPerfect || isTimeExpired;
+  const isInteractionBlocked =
+    isPaused || isCompletionRevealPending || isTimeExpired || inputLockedRef.current;
+  const completionRevealDelayMs = settings.reducedMotion
+    ? reducedMotionCompletionRevealDelayMs
+    : COMPLETION_REVEAL_DELAY_MS;
 
   useEffect(() => {
+    inputLockedRef.current = false;
+    setIsCompletionRevealPending(false);
     setAttemptConfig(createAttemptConfig(level, levels));
   }, [level, levels]);
 
@@ -172,7 +189,7 @@ export function FlagMatchEngine({
     }
 
     completedLevelIdRef.current = playableLevel.id;
-    onLevelComplete?.({
+    const summary = {
       elapsedSeconds,
       incorrectAttempts: incorrectAttemptCount,
       isFinalLevel,
@@ -181,8 +198,24 @@ export function FlagMatchEngine({
       levelIndex,
       levelNumber: levelIndex + 1,
       score,
-    });
+    };
+
+    if (!validation.isPerfect) {
+      inputLockedRef.current = true;
+      onLevelComplete?.(summary);
+      return;
+    }
+
+    setIsCompletionRevealPending(true);
+    const timeoutId = window.setTimeout(() => {
+      onLevelComplete?.(summary);
+    }, completionRevealDelayMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [
+    completionRevealDelayMs,
     elapsedSeconds,
     incorrectAttemptCount,
     isFinalLevel,
@@ -199,13 +232,22 @@ export function FlagMatchEngine({
       return;
     }
 
-    if (isPaused || isMatchLocked(playableLevel, playerMatches, flagId)) {
+    if (
+      isInputBlocked() ||
+      isLevelEnded ||
+      isMatchLocked(playableLevel, playerMatches, flagId)
+    ) {
       return;
     }
 
     const attempt = createMatchAttempt(playableLevel, flagId, countryId);
+    const nextPlayerMatches = applyMatchAttempt(playerMatches, attempt);
 
-    setPlayerMatches((currentMatches) => applyMatchAttempt(currentMatches, attempt));
+    if (validateMatches(playableLevel, nextPlayerMatches).isPerfect) {
+      inputLockedRef.current = true;
+    }
+
+    setPlayerMatches(nextPlayerMatches);
     setAttempts((currentAttempts) => ({
       ...currentAttempts,
       [flagId]: {
@@ -224,7 +266,7 @@ export function FlagMatchEngine({
   }
 
   function handleFlagClick(flagId: string) {
-    if (isPaused) {
+    if (isInputBlocked()) {
       return;
     }
 
@@ -239,7 +281,7 @@ export function FlagMatchEngine({
   function handleDrop(event: DragEvent<HTMLButtonElement>, flagId: string) {
     event.preventDefault();
 
-    if (isPaused) {
+    if (isInputBlocked()) {
       return;
     }
 
@@ -264,8 +306,18 @@ export function FlagMatchEngine({
   }
 
   function selectCountry(countryId: string) {
+    if (isInputBlocked()) {
+      return;
+    }
+
     setSelectedCountryId(countryId);
     setFlagClickMessage(undefined);
+  }
+
+  function isInputBlocked() {
+    return (
+      isPaused || isCompletionRevealPending || isTimeExpired || inputLockedRef.current
+    );
   }
 
   return (
@@ -286,6 +338,15 @@ export function FlagMatchEngine({
         totalLevels={levels.length}
         validation={validation}
       />
+
+      {isCompletionRevealPending ? (
+        <p
+          aria-live="polite"
+          className="mt-4 rounded border border-fcc-success bg-fcc-background px-3 py-2 font-mono text-base font-bold text-fcc-success"
+        >
+          Level complete. Showing final match.
+        </p>
+      ) : null}
 
       <ShowInstructionsButton
         onShowTutorial={() => {
@@ -315,6 +376,7 @@ export function FlagMatchEngine({
             countries={availableCountries}
             selectedCountryId={selectedCountryId}
             selectedCountryName={selectedCountryName}
+            isDisabled={isInteractionBlocked}
             onSelect={selectCountry}
           />
 

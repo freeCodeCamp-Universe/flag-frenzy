@@ -5,6 +5,7 @@ import type { CountryOption } from '../../game/types';
 
 interface CountryBankProps {
   countries: CountryOption[];
+  isDisabled?: boolean;
   onSelect: (countryId: string) => void;
   selectedCountryId?: string;
   selectedCountryName?: string;
@@ -12,6 +13,7 @@ interface CountryBankProps {
 
 export function CountryBank({
   countries,
+  isDisabled = false,
   onSelect,
   selectedCountryId,
   selectedCountryName,
@@ -47,8 +49,10 @@ export function CountryBank({
                   isSelected
                     ? 'border-fcc-cta bg-fcc-cta text-fcc-background'
                     : 'border-fcc-border bg-fcc-background text-fcc-foreground hover:border-fcc-highlight hover:bg-fcc-surface',
+                  isDisabled ? 'cursor-not-allowed opacity-70' : '',
                 ].join(' ')}
-                draggable={canDragCountries}
+                disabled={isDisabled}
+                draggable={canDragCountries && !isDisabled}
                 onClick={() => {
                   onSelect(country.id);
                 }}
