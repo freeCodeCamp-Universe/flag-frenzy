@@ -40,7 +40,7 @@ export function GameplayHud({
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="font-mono text-base text-fcc-highlight">
-            level {String(currentLevel)}/{String(totalLevels)} / {mode}
+            Level {String(currentLevel)} of {String(totalLevels)}, {mode}
           </p>
           <h2 id="flag-engine-title" className="text-2xl font-bold">
             Match flags
@@ -52,7 +52,10 @@ export function GameplayHud({
             <Stat
               pulseKey={activeCorrectCount}
               label="Correct"
-              value={`${String(activeCorrectCount)}/${String(activeTotalCount)}`}
+              value={`${String(activeCorrectCount)} of ${String(activeTotalCount)}`}
+              valueLabel={`${String(activeCorrectCount)} of ${String(
+                activeTotalCount,
+              )} matches completed`}
             />
             <Stat label="Score" pulseKey={score} value={String(score)} />
             <Stat
@@ -89,9 +92,10 @@ interface StatProps {
   label: string;
   pulseKey: number;
   value: string;
+  valueLabel?: string;
 }
 
-function Stat({ label, pulseKey, value }: StatProps) {
+function Stat({ label, pulseKey, value, valueLabel }: StatProps) {
   return (
     <motion.div
       animate="changed"
@@ -101,7 +105,7 @@ function Stat({ label, pulseKey, value }: StatProps) {
     >
       <dt className="text-fcc-muted">{label}</dt>
       <dd
-        aria-label={`${label}: ${value}`}
+        aria-label={`${label}: ${valueLabel ?? value}`}
         className="text-xl font-bold text-fcc-foreground"
       >
         {value}

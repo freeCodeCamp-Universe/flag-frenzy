@@ -124,7 +124,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Level Select' }));
     await user.click(screen.getByRole('button', { name: 'Level 1 unlocked' }));
 
-    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 1 of 30, timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
   });
 
@@ -215,7 +215,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
-    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 1 of 30, timed')).toBeInTheDocument();
     expect(screen.getByText('Timer')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Countries' })).toBeInTheDocument();
     const countriesPanel = within(
@@ -240,7 +240,9 @@ describe('App', () => {
     await user.click(getFlagButtonByCountryName(selectedCountryName));
 
     expect(screen.getByText('Select a country first.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 0 of 4 matches completed'),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: selectedCountryName }));
 
@@ -257,7 +259,9 @@ describe('App', () => {
     await user.click(getFlagButtonByCountryName(selectedCountryName));
 
     expect(screen.getByLabelText('correct')).toBeInTheDocument();
-    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 1 of 4 matches completed'),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('Score: 100')).toBeInTheDocument();
     expect(getFlagButtonByCountryName(selectedCountryName)).toBeDisabled();
     expect(screen.queryByText('locked')).not.toBeInTheDocument();
@@ -483,7 +487,7 @@ describe('App', () => {
     await waitForElementToBeRemoved(() =>
       screen.queryByRole('dialog', { name: 'Pause Menu' }),
     );
-    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 1 of 30, timed')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Pause' }));
     await user.click(screen.getByRole('button', { name: 'Quit' }));
@@ -523,7 +527,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Resume' }));
 
-    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 1 of 30, timed')).toBeInTheDocument();
     expect(screen.queryByText('SFX OFF')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Pause' }));
@@ -569,7 +573,9 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: firstCountryName }));
     await user.click(getFlagButtonByCountryName(firstCountryName));
 
-    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 1 of 4 matches completed'),
+    ).toBeInTheDocument();
     expect(AudioContextMock).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole('button', { name: 'Pause' }));
@@ -613,7 +619,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Start' }));
 
-    expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 2 of 30, timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
   });
 
@@ -644,13 +650,17 @@ describe('App', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Hint' })).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Correct: 0/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 0 of 4 matches completed'),
+    ).toBeInTheDocument();
     expect(getFlagButtonByCountryName(targetCountryName)).toBeEnabled();
 
     await user.click(screen.getByRole('button', { name: targetCountryName }));
     await user.click(getFlagButtonByCountryName(targetCountryName));
 
-    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 1 of 4 matches completed'),
+    ).toBeInTheDocument();
     expect(getFlagButtonByCountryName(targetCountryName)).toBeDisabled();
   });
 
@@ -679,7 +689,7 @@ describe('App', () => {
 
     vi.useFakeTimers();
     fireEvent.click(screen.getByRole('button', { name: 'Retry Level' }));
-    expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 1 of 30, timed')).toBeInTheDocument();
     expect(
       within(screen.getByRole('complementary', { name: 'Countries' })).getByText(
         'Canada',
@@ -725,7 +735,9 @@ describe('App', () => {
       dataTransfer,
     });
 
-    expect(screen.getByLabelText('Correct: 1/4')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Correct: 1 of 4 matches completed'),
+    ).toBeInTheDocument();
     expect(getFlagButtonByCountryName(targetCountryName)).toBeDisabled();
   });
 
@@ -736,7 +748,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('level 2/30 / timed')).toBeInTheDocument();
+    expect(screen.getByText('Level 2 of 30, timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
     expect(new Set(getActiveFlagNames()).size).toBe(4);
     expect(getCountryPanelNames()).toEqual(
@@ -750,7 +762,9 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'Level Summary' }),
     ).toBeInTheDocument();
     expect(localStorage.getItem('flag-frenzy:progress:v1')).toContain('level-02');
-    expect(screen.queryByLabelText('Correct: 0/1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Correct: 0 of 1 matches completed'),
+    ).not.toBeInTheDocument();
   });
 
   it('keeps active flags stable during an attempt', async () => {
@@ -866,7 +880,9 @@ describe('App', () => {
     expect(
       await screen.findByRole('heading', { name: 'Level Summary' }),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText('Correct: 0/1')).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Correct: 0 of 1 matches completed'),
+    ).not.toBeInTheDocument();
   });
 
   it('advances to the next level after a perfect round', async () => {
@@ -885,7 +901,7 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Next Level' }));
 
-    expect(await screen.findByText('level 2/30 / timed')).toBeInTheDocument();
+    expect(await screen.findByText('Level 2 of 30, timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
 
     await user.click(screen.getByRole('link', { name: 'flag-frenzy' }));
