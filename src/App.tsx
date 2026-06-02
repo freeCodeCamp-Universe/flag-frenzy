@@ -60,6 +60,7 @@ function TestRoute({ currentPath }: TestRouteProps) {
     levelSummary,
     levels,
     nextLevelNumber,
+    resetProgress,
     startLevel,
     unlockedCount,
   } = useFlagFrenzy();
@@ -70,6 +71,7 @@ function TestRoute({ currentPath }: TestRouteProps) {
     return (
       <LevelSelectScreen
         levels={levels}
+        onResetProgress={resetProgress}
         onSelectLevel={startLevel}
         unlockedCount={unlockedCount}
       />

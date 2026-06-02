@@ -13,9 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { campaignLevels } from './levels/campaign';
 import { createMemoryStorage } from './test/createMemoryStorage';
-import { progressStorageKey } from './utils/progressStorage';
-
-const tutorialStorageKey = 'flag-frenzy:tutorial-complete:v1';
+import { progressStorageKey, tutorialStorageKey } from './utils/progressStorage';
 
 describe('App', () => {
   beforeEach(() => {
@@ -87,6 +85,69 @@ describe('App', () => {
 
     expect(screen.getByText('level 1/30 / timed')).toBeInTheDocument();
     expect(getActiveFlagButtons()).toHaveLength(4);
+  });
+
+  it('resets saved progress from level select after confirmation', async () => {
+    const user = userEvent.setup();
+
+    localStorage.setItem(
+      progressStorageKey,
+      JSON.stringify({
+        completedLevelIds: ['level-01'],
+        highScores: {
+          'level-01': 400,
+        },
+        highestUnlockedLevel: 2,
+        version: 1,
+      }),
+    );
+    localStorage.setItem(tutorialStorageKey, 'true');
+    localStorage.setItem('unrelated-app:progress:v1', 'keep-me');
+
+    window.history.pushState({}, '', '/levels');
+
+    render(<App />);
+
+    expect(screen.getByText('2 unlocked')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 2 unlocked' })).toBeEnabled();
+    expect(screen.getByText('Best score: 400')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reset Progress' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Reset Progress' });
+
+    expect(
+      within(dialog).getByText(
+        /erase completed levels, unlocked progress, saved high scores, and tutorial completion/i,
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(
+      screen.queryByRole('dialog', { name: 'Reset Progress' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 2 unlocked' })).toBeEnabled();
+
+    await user.click(screen.getByRole('button', { name: 'Reset Progress' }));
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Reset Progress' })).getByRole(
+        'button',
+        { name: 'Reset Progress' },
+      ),
+    );
+
+    expect(screen.getByRole('heading', { name: 'Flag Frenzy' })).toBeInTheDocument();
+    expect(localStorage.getItem(progressStorageKey)).toBeNull();
+    expect(localStorage.getItem(tutorialStorageKey)).toBeNull();
+    expect(localStorage.getItem('unrelated-app:progress:v1')).toBe('keep-me');
+
+    await user.click(screen.getByRole('button', { name: 'Level Select' }));
+
+    expect(screen.getByText('1 unlocked')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Level 1 unlocked' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Level 2 locked' })).toBeDisabled();
+    expect(screen.queryByText('Best score: 400')).not.toBeInTheDocument();
   });
 
   it('renders Countries before the flag grid for gameplay layout', async () => {

@@ -28,6 +28,7 @@ interface FlagFrenzyContextValue {
   levelSummary: LevelResultSummary | undefined;
   levels: HomeLevel[];
   nextLevelNumber: number;
+  resetProgress: () => void;
   startLevel: (levelNumber: number) => void;
   unlockedCount: number;
 }
@@ -53,7 +54,11 @@ export function NextFlagFrenzyProvider({ children }: PropsWithChildren) {
 }
 
 export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderProps) {
-  const { completeLevel, progress } = useProgression();
+  const {
+    completeLevel,
+    progress,
+    resetProgress: resetSavedProgress,
+  } = useProgression();
   const [levelSummary, setLevelSummary] = useState<LevelResultSummary>();
   const [retryCountsByLevelId, setRetryCountsByLevelId] = useState<
     Record<string, number>
@@ -82,6 +87,13 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
   const goToLevels = useCallback(() => {
     navigate('/levels');
   }, [navigate]);
+
+  const resetProgress = useCallback(() => {
+    resetSavedProgress();
+    setLevelSummary(undefined);
+    setRetryCountsByLevelId({});
+    navigate('/');
+  }, [navigate, resetSavedProgress]);
 
   const handleLevelComplete = useCallback(
     (summary: LevelCompletionSummary) => {
@@ -134,6 +146,7 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
       levelSummary,
       levels,
       nextLevelNumber,
+      resetProgress,
       startLevel,
       unlockedCount: progress.highestUnlockedLevel,
     }),
@@ -146,6 +159,7 @@ export function FlagFrenzyProvider({ children, navigate }: FlagFrenzyProviderPro
       levels,
       nextLevelNumber,
       progress.highestUnlockedLevel,
+      resetProgress,
       startLevel,
     ],
   );

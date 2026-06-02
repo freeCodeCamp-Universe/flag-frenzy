@@ -22,11 +22,11 @@ import { getAnimationTransition, levelAdvanceVariants } from '../utils/animation
 import { CountryBank } from './gameplay/CountryBank';
 import { FlagCard } from './gameplay/FlagCard';
 import { GameplayHud } from './gameplay/GameplayHud';
+import { tutorialStorageKey } from '../utils/progressStorage';
 
 const maxActiveFlags = 4;
 const minCountryOptions = 8;
 const maxCountryOptions = 10;
-const tutorialStorageKey = 'flag-frenzy:tutorial-complete:v1';
 
 interface AttemptConfig {
   countryOptionIds: string[];
